@@ -104,4 +104,4 @@ venv.bak/
 # PyPI configuration file
 .pypirc
 
-Config.ini
+bot.toml

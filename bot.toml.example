@@ -1,0 +1,16 @@
+[bot]
+token = "<your discord bot token here>"
+log_level = "INFO"
+
+[guild]
+id = <the id of the server here>
+club_ids = [
+    1,  # AE
+    29,  # Club Welcome
+    38,  # Troll Penché
+    43,  # Reflex
+    79,  # Cook'UT
+]
+
+[sith_api]
+api_key = "<your sith api token here>"
