@@ -1,14 +1,13 @@
 from pathlib import Path
 from typing import Literal
 
+from pydantic import BaseModel, HttpUrl, SecretStr
 from pydantic_settings import (
     BaseSettings,
-    SettingsConfigDict,
     PydanticBaseSettingsSource,
+    SettingsConfigDict,
     TomlConfigSettingsSource,
 )
-
-from pydantic import HttpUrl, BaseModel, SecretStr
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,7 +36,6 @@ class Settings(BaseSettings):
         toml_file=str(BASE_DIR / "bot.toml"),
         env_nested_delimiter="__",
     )
-    # model_config = SettingsConfigDict(toml_file=BASE_DIR / "bot.toml")
 
     foo: str
     bot: BotConfig

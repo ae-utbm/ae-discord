@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from discord import Interaction, app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
-from discord import Interaction, app_commands
 
 from src.services.club import ClubService
 from src.settings import Settings
 
 if TYPE_CHECKING:
+    from src.client import ClubSchema, SithClient
     from src.main import AeBot
-    from src.client import SithClient, ClubSchema
 
 
 class ClubCog(commands.GroupCog, group_name="club"):
-    def __init__(self, client: SithClient, bot: AeBot):
+    def __init__(self, client: SithClient, bot: "AeBot"):
         self.club_service = ClubService(client, bot)
         self.settings = Settings()
 

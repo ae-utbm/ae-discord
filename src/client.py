@@ -2,13 +2,13 @@ import asyncio
 import logging
 import types
 from datetime import date
+
 from aiohttp import (
     ClientSession,
     TraceConfig,
     TraceRequestEndParams,
     TraceRequestStartParams,
 )
-
 from pydantic import BaseModel, ValidationError
 
 from src.settings import Settings

@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from urllib.parse import urljoin
 
 from discord import Embed
 
-from src.client import SithClient, SimpleClubSchema, ClubSchema
-from src.main import AeBot
 from src.settings import Settings
+
+if TYPE_CHECKING:
+    from src.client import ClubSchema, SimpleClubSchema, SithClient
+    from src.main import AeBot
 
 
 class ClubService:
@@ -39,6 +45,7 @@ class ClubService:
                     username += f" - {user.nick_name}"
                 embed.add_field(name=role_name, value=username)
         if club.logo:
-            # embed = embed.set_thumbnail(url=urljoin(str(self._client._base_url), club.logo))
-            embed.set_thumbnail(url="https://ae.utbm.fr/data/club_logos/arretdessi.png")
+            embed = embed.set_thumbnail(
+                url=urljoin(str(self._client._base_url), club.logo)
+            )
         return embed

@@ -1,11 +1,13 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
-from discord.app_commands import AppCommand
 from discord.ext import commands
-from discord.ext.commands import Context
 
 if TYPE_CHECKING:
+    from discord.app_commands import AppCommand
+    from discord.ext.commands import Context
+
     from src.main import AeBot
 
 

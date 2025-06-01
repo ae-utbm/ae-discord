@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from discord import Intents, Guild
+
+from discord import Guild, Intents
 from discord.ext import commands
 from discord.utils import setup_logging
 
