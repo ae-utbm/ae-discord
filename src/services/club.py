@@ -25,7 +25,7 @@ class ClubService:
         clubs = await self._client.search_clubs(current)
         if clubs is None:
             return []
-        return [club for club in clubs if club.id in self._config.guild.club_ids]
+        return [club for club in clubs if club.id in self._config.guild.clubs]
 
     async def get_club(self, club_id: int) -> ClubSchema | None:
         if club_id not in self._club_cache:

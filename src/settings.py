@@ -17,9 +17,14 @@ class ApiConfig(BaseModel):
     api_key: SecretStr
 
 
+class ClubConfig(BaseModel):
+    president_role_id: int
+    member_role_id: int
+
+
 class GuildConfig(BaseModel):
     id: int
-    club_ids: list[int]
+    clubs: dict[int, ClubConfig]
 
 
 class BotConfig(BaseModel):

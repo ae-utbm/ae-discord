@@ -19,7 +19,9 @@ class AeBot(commands.Bot):
         self.settings = Settings()
         self.logger = logging.getLogger("discord")
         self.client = client
-        super().__init__(command_prefix="?", intents=Intents.all())
+        super().__init__(
+            command_prefix=self.settings.bot.command_prefix, intents=Intents.all()
+        )
 
     async def setup_hook(self):
         await self.add_cog(ClubCog(self.client, self))
