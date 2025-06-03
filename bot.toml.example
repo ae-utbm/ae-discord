@@ -4,13 +4,22 @@ log_level = "INFO"
 
 [guild]
 id = <the id of the server here>
-club_ids = [
-    1,  # AE
-    29,  # Club Welcome
-    38,  # Troll Penché
-    43,  # Reflex
-    79,  # Cook'UT
-]
+
+[guild.club.1]  # AE
+president_role_id = <role id>
+member_role_id = <role id>
+[guild.club.29]  # Club Welcome
+president_role_id = <role id>
+member_role_id = <role id>
+[guild.club.38]  # Troll Penché
+president_role_id = <role id>
+member_role_id = <role id>
+[guild.club.43]  # Reflex
+president_role_id = <role id>
+member_role_id = <role id>
+[guild.club.79]  # Cook'UT
+president_role_id = <role id>
+member_role_id = <role id>
 
 [sith_api]
 api_key = "<your sith api token here>"
