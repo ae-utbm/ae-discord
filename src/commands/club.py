@@ -47,3 +47,26 @@ class ClubCog(commands.GroupCog, group_name="club"):
     ):
         await interaction.response.defer(thinking=True)
         await interaction.followup.send(embed=self.club_service.embed(club))
+
+    @app_commands.command(name="add_member")
+    @app_commands.autocomplete(club=autocomplete_club)
+    async def add_club_member(
+        self,
+        interaction: Interaction,
+        club: int,
+        member: Member,
+    ):
+        await interaction.response.defer(thinking=True)
+        club = next(
+            (c for _id, c in self.settings.guild.clubs.items() if _id == club), None
+        )
+        if not club:
+            await interaction.followup.send("Ce club n'a pas été trouvé")
+            return
+        if not interaction.user.get_role(club.president_role_id):
+            await interaction.followup.send(
+                "Seul le président du club peut utiliser cette commande"
+            )
+            return
+        await member.add_roles(interaction.guild.get_role(club.member_role_id))
+        await interaction.followup.send("Rôle attribué :thumbs_up:")
