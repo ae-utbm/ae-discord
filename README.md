@@ -31,3 +31,9 @@ Vous aurez notamment besoin d'un token de bot discord
 (que vous pouvez obtenir sur le portail développeurs de discord)
 et d'une clef d'API pour le site AE 
 (pour ça, il faut demander directement au pôle info).
+
+Pour lancer le bot :
+
+```shell
+uv run -m src.main
+```

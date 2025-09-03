@@ -36,7 +36,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     ) -> list[Choice]:
         """Autocompletion for clubs."""
         return [
-            Choice(name=club.name, value=club.id)
+            Choice(name=club.name, value=str(club.id))
             for club in await self.club_service.search_club(current)
         ]
 

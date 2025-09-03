@@ -42,7 +42,6 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
     )
 
-    foo: str
     bot: BotConfig
     guild: GuildConfig
     sith_api: ApiConfig
