@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import discord
 from discord import Interaction, Member, app_commands
 from discord.app_commands import Choice, Transform, Transformer
 from discord.ext import commands
@@ -70,3 +71,52 @@ class ClubCog(commands.GroupCog, group_name="club"):
             return
         await member.add_roles(interaction.guild.get_role(club.member_role_id))
         await interaction.followup.send("Rôle attribué :thumbs_up:")
+
+    @app_commands.command(name="create")
+    @app_commands.autocomplete(club=autocomplete_club)
+    async def create_club(self, interaction: Interaction, club: int):
+        await interaction.response.defer(thinking=True)
+        serv = interaction.guild
+        clu = await self.club_service.get_club(club)
+        if clu is None:
+            await interaction.followup.send("Erreur : Club introuvable.")
+            return
+        club_name = clu.name
+
+        # region create the role for member, presidence and treasurer
+        await serv.create_role(
+            name=f"Président {club_name}", color=discord.Color.from_str("#FFFFFF")
+        )
+        await serv.create_role(
+            name=f"Trésorier {club_name}", color=discord.Color.from_str("#FFFFFF")
+        )
+        await serv.create_role(
+            name=f"Membre {club_name}", color=discord.Color.from_str("#FFFFFF")
+        )
+        # endregion
+
+        # region create the clubs category
+        """keep in memory roles for the club"""
+        president = discord.utils.get(serv.roles, name=f"Président {club_name}")
+        membre = discord.utils.get(serv.roles, name=f"Membre {club_name}")
+        tresorier = discord.utils.get(serv.roles, name=f"Trésorier {club_name}")
+
+        overwrites = {
+            serv.default_role: discord.PermissionOverwrite(read_messages=False),
+            president: discord.PermissionOverwrite(
+                read_messages=True, manage_channels=True
+            ),
+            membre: discord.PermissionOverwrite(read_messages=True),
+            tresorier: discord.PermissionOverwrite(read_messages=True),
+        }
+
+        await serv.create_category(club_name, overwrites=overwrites)
+        # enderegion
+
+        # region create default channel
+        categorie = discord.utils.get(serv.categories, name=club_name)
+        await serv.create_text_channel(f"Général-{club_name}", category=categorie)
+        await serv.create_voice_channel(f"Général-{club_name}", category=categorie)
+
+        await interaction.followup.send(club_name)
+        # endregion

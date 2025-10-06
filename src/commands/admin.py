@@ -19,5 +19,7 @@ class AdminCog(commands.Cog):
     async def sync_commands(self, ctx: Context):
         """Actualise les commandes du bot."""
         synced: list[AppCommand] = await self._bot.tree.sync()
-        msg = "\n".join([f"- {cmd.name}" for cmd in synced])
+        await self._bot.tree.sync(guild=ctx.guild)
+        cmd_list = "\n".join([f"- {cmd.name}" for cmd in synced])
+        msg = f"Commandes synchronisées :\n{cmd_list}"
         await ctx.reply(msg)
