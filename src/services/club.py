@@ -52,21 +52,12 @@ class ClubService:
         return embed
 
     async def create_club(self, club_name: str, serv):
-        # region create the role for member, presidence and treasurer
-        president = await serv.create_role(
-            name=f"Président {club_name}", color=discord.Color.from_str("#FFFFFF")
-        )
-        tresorier = await serv.create_role(
-            name=f"Trésorier {club_name}", color=discord.Color.from_str("#FFFFFF")
-        )
-        membre = await serv.create_role(
-            name=f"Membre {club_name}",
-            color=discord.Color.from_str("#FFFFFF"),
-            mentionable=True,
-        )
-        # endregion
+        # create the role for member, presidence and treasurer
+        president = await serv.create_role(name=f"Président {club_name}")
+        tresorier = await serv.create_role(name=f"Trésorier {club_name}")
+        membre = await serv.create_role(name=f"Membre {club_name}", mentionable=True)
 
-        # region create the clubs category
+        # create the clubs category
         overwrites = {
             serv.default_role: discord.PermissionOverwrite(read_messages=False),
             president: discord.PermissionOverwrite(
@@ -77,9 +68,7 @@ class ClubService:
         }
 
         categorie = await serv.create_category(club_name, overwrites=overwrites)
-        # enderegion
 
-        # region create default channel
+        # create default channel
         await serv.create_text_channel(f"Général-{club_name}", category=categorie)
         await serv.create_voice_channel(f"Général-{club_name}", category=categorie)
-        # endregion
