@@ -74,18 +74,16 @@ class ClubCog(commands.GroupCog, group_name="club"):
 
     @app_commands.command(name="create")
     @app_commands.autocomplete(club=autocomplete_club)
-    async def create_club(self, interaction: Interaction, club: int):
+    async def create_club(
+        self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
+    ):
         await interaction.response.defer(thinking=True)
         serv = interaction.guild
-        new_club = await self.club_service.get_club(club)
-        if new_club is None:
-            await interaction.followup.send("Erreur : Club introuvable.")
-            return
 
         # look if the club is already create
-        if discord.utils.get(serv.categories, name=new_club.name) is None:
-            await self.club_service.create_club(new_club.name, serv)
-            await interaction.followup.send(new_club.name)
+        if discord.utils.get(serv.categories, name=club.name) is None:
+            await self.club_service.create_club(club.name, serv)
+            await interaction.followup.send(f"Le club : {club.name} à été créé")
 
         else:
-            await interaction.followup.send(f"Le club : {new_club.name} existe déjà...")
+            await interaction.followup.send(f"Le club : {club.name} existe déjà...")
