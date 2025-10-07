@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import logging
+from datetime import datetime
+from typing import TYPE_CHECKING
 
-from discord import Guild, Intents
+from discord import Guild, Intents, Interaction
 from discord.ext import commands
 from discord.utils import setup_logging
 
@@ -10,6 +14,10 @@ from src.commands.admin import AdminCog
 from src.commands.club import ClubCog
 from src.commands.misc import MiscCog
 from src.settings import Settings
+
+if TYPE_CHECKING:
+    from discord.app_commands import Command
+    from discord.ext.commands import Context
 
 
 class AeBot(commands.Bot):
@@ -32,6 +40,28 @@ class AeBot(commands.Bot):
         await self.wait_until_ready()
         self.watched_guild = self.get_guild(self.settings.guild.id)
         self.logger.info(f"Bot ready to act on {self.watched_guild.name}")
+
+    async def on_command(self, ctx: Context):
+        start = ctx.message.created_at
+        duration = datetime.now(tz=start.tzinfo) - start
+        self.logger.info(
+            f"Command `{ctx.command.name}` called by {ctx.author.name} "
+            f"[{duration.total_seconds():.6f}sec]"
+        )
+
+    async def on_app_command_completion(
+        self, interaction: Interaction, command: Command
+    ):
+        start = interaction.created_at
+        duration = datetime.now(tz=start.tzinfo) - start
+        cmd_name = (
+            f"{command.parent.name} {command.name}" if command.parent else command.name
+        )
+        self.logger.info(
+            f"Slash command `{cmd_name}` "
+            f"called by {interaction.user.name} in {interaction.channel.name} "
+            f"[{duration.total_seconds():.6f}sec]"
+        )
 
 
 async def main():
