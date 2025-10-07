@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import discord
 from discord import Interaction, Member, app_commands
 from discord.app_commands import Choice, Transform, Transformer
 from discord.ext import commands
@@ -70,3 +71,19 @@ class ClubCog(commands.GroupCog, group_name="club"):
             return
         await member.add_roles(interaction.guild.get_role(club.member_role_id))
         await interaction.followup.send("Rôle attribué :thumbs_up:")
+
+    @app_commands.command(name="create")
+    @app_commands.autocomplete(club=autocomplete_club)
+    async def create_club(
+        self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
+    ):
+        await interaction.response.defer(thinking=True)
+        serv = interaction.guild
+
+        # look if the club is already create
+        if discord.utils.get(serv.categories, name=club.name) is None:
+            await self.club_service.create_club(club.name, serv)
+            await interaction.followup.send(f"Le club : {club.name} à été créé")
+
+        else:
+            await interaction.followup.send(f"Le club : {club.name} existe déjà...")

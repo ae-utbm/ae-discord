@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
+import discord
 from discord import Embed
 
 from src.settings import Settings
@@ -49,3 +50,25 @@ class ClubService:
                 url=urljoin(str(self._client._base_url), club.logo)
             )
         return embed
+
+    async def create_club(self, club_name: str, serv):
+        # create the role for member, presidence and treasurer
+        president = await serv.create_role(name=f"Président {club_name}")
+        tresorier = await serv.create_role(name=f"Trésorier {club_name}")
+        membre = await serv.create_role(name=f"Membre {club_name}", mentionable=True)
+
+        # create the clubs category
+        overwrites = {
+            serv.default_role: discord.PermissionOverwrite(read_messages=False),
+            president: discord.PermissionOverwrite(
+                read_messages=True, manage_channels=True
+            ),
+            membre: discord.PermissionOverwrite(read_messages=True),
+            tresorier: discord.PermissionOverwrite(read_messages=True),
+        }
+
+        categorie = await serv.create_category(club_name, overwrites=overwrites)
+
+        # create default channel
+        await serv.create_text_channel(f"Général-{club_name}", category=categorie)
+        await serv.create_voice_channel(f"Général-{club_name}", category=categorie)
