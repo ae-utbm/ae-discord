@@ -53,23 +53,20 @@ class ClubService:
 
     async def create_club(self, club_name: str, serv):
         # region create the role for member, presidence and treasurer
-        await serv.create_role(
+        president = await serv.create_role(
             name=f"Président {club_name}", color=discord.Color.from_str("#FFFFFF")
         )
-        await serv.create_role(
+        tresorier = await serv.create_role(
             name=f"Trésorier {club_name}", color=discord.Color.from_str("#FFFFFF")
         )
-        await serv.create_role(
-            name=f"Membre {club_name}", color=discord.Color.from_str("#FFFFFF")
+        membre = await serv.create_role(
+            name=f"Membre {club_name}",
+            color=discord.Color.from_str("#FFFFFF"),
+            mentionable=True,
         )
         # endregion
 
         # region create the clubs category
-        """keep in memory roles for the club"""
-        president = discord.utils.get(serv.roles, name=f"Président {club_name}")
-        membre = discord.utils.get(serv.roles, name=f"Membre {club_name}")
-        tresorier = discord.utils.get(serv.roles, name=f"Trésorier {club_name}")
-
         overwrites = {
             serv.default_role: discord.PermissionOverwrite(read_messages=False),
             president: discord.PermissionOverwrite(
@@ -79,11 +76,10 @@ class ClubService:
             tresorier: discord.PermissionOverwrite(read_messages=True),
         }
 
-        await serv.create_category(club_name, overwrites=overwrites)
+        categorie = await serv.create_category(club_name, overwrites=overwrites)
         # enderegion
 
         # region create default channel
-        categorie = discord.utils.get(serv.categories, name=club_name)
         await serv.create_text_channel(f"Général-{club_name}", category=categorie)
         await serv.create_voice_channel(f"Général-{club_name}", category=categorie)
         # endregion
