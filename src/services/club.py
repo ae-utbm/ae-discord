@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
+import discord
 from discord import Embed
 
 from src.settings import Settings
@@ -49,3 +50,40 @@ class ClubService:
                 url=urljoin(str(self._client._base_url), club.logo)
             )
         return embed
+
+    async def create_club(self, club_name: str, serv):
+        # region create the role for member, presidence and treasurer
+        await serv.create_role(
+            name=f"Président {club_name}", color=discord.Color.from_str("#FFFFFF")
+        )
+        await serv.create_role(
+            name=f"Trésorier {club_name}", color=discord.Color.from_str("#FFFFFF")
+        )
+        await serv.create_role(
+            name=f"Membre {club_name}", color=discord.Color.from_str("#FFFFFF")
+        )
+        # endregion
+
+        # region create the clubs category
+        """keep in memory roles for the club"""
+        president = discord.utils.get(serv.roles, name=f"Président {club_name}")
+        membre = discord.utils.get(serv.roles, name=f"Membre {club_name}")
+        tresorier = discord.utils.get(serv.roles, name=f"Trésorier {club_name}")
+
+        overwrites = {
+            serv.default_role: discord.PermissionOverwrite(read_messages=False),
+            president: discord.PermissionOverwrite(
+                read_messages=True, manage_channels=True
+            ),
+            membre: discord.PermissionOverwrite(read_messages=True),
+            tresorier: discord.PermissionOverwrite(read_messages=True),
+        }
+
+        await serv.create_category(club_name, overwrites=overwrites)
+        # enderegion
+
+        # region create default channel
+        categorie = discord.utils.get(serv.categories, name=club_name)
+        await serv.create_text_channel(f"Général-{club_name}", category=categorie)
+        await serv.create_voice_channel(f"Général-{club_name}", category=categorie)
+        # endregion
