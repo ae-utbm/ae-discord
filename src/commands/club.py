@@ -109,12 +109,17 @@ class ClubCog(commands.GroupCog, group_name="club"):
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
         await interaction.response.defer(thinking=True)
-        serv = interaction.guild
+        is_pres = utils.get(interaction.guild.roles, name="Présidence AE")
+        if is_pres in interaction.user.roles:
+            serv = interaction.guild
+            # look if the club is already create
+            if club.name not in self.club_service.club_discord:
+                await self.club_service.create_club(club.name, serv)
+                await interaction.followup.send(f"Le club : {club.name} à été créé")
 
-        # look if the club is already create
-        if club.name not in self.club_service.club_discord:
-            await self.club_service.create_club(club.name, serv)
-            await interaction.followup.send(f"Le club : {club.name} à été créé")
-
+            else:
+                await interaction.followup.send(f"Le club : {club.name} existe déjà...")
         else:
-            await interaction.followup.send(f"Le club : {club.name} existe déjà...")
+            await interaction.followup.send(
+                "Vous n'avez pas les permission pour créer un club"
+            )
