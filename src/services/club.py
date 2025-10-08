@@ -6,8 +6,6 @@ from urllib.parse import urljoin
 import discord
 from discord import Embed
 
-from src.settings import Settings
-
 if TYPE_CHECKING:
     from src.client import ClubSchema, SimpleClubSchema, SithClient
     from src.main import AeBot
@@ -17,16 +15,13 @@ class ClubService:
     """Manage features directly related to clubs."""
 
     def __init__(self, client: SithClient, bot: AeBot):
-        self._config = Settings()
         self._client = client
         self._club_cache = {}
         self._bot = bot
 
     async def search_club(self, current: str) -> list[SimpleClubSchema]:
         clubs = await self._client.search_clubs(current)
-        if clubs is None:
-            return []
-        return [club for club in clubs if club.id in self._config.guild.clubs]
+        return clubs if clubs is not None else []
 
     async def get_club(self, club_id: int) -> ClubSchema | None:
         if club_id not in self._club_cache:

@@ -5,22 +5,6 @@ log_level = "INFO"
 [guild]
 id = <the id of the server here>
 
-[guild.clubs.1]  # AE
-president_role_id = <role id>
-member_role_id = <role id>
-[guild.clubs.29]  # Club Welcome
-president_role_id = <role id>
-member_role_id = <role id>
-[guild.clubs.38]  # Troll Penché
-president_role_id = <role id>
-member_role_id = <role id>
-[guild.clubs.43]  # Reflex
-president_role_id = <role id>
-member_role_id = <role id>
-[guild.clubs.79]  # Cook'UT
-president_role_id = <role id>
-member_role_id = <role id>
-
 [sith_api]
 api_key = "<your sith api token here>"
 url = "https://ae.utbm.fr/"
