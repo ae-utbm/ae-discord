@@ -36,10 +36,9 @@ class ClubCog(commands.GroupCog, group_name="club"):
         self, _interaction: Interaction, current: str
     ) -> list[Choice]:
         """Autocompletion for clubs."""
-        return [
-            Choice(name=club.name, value=str(club.id))
-            for club in await self.club_service.search_club(current)
-        ]
+        clubs = await self.club_service.search_club(current)
+        clubs = clubs[:25]  # discord autocomplete can have at most 25 items
+        return [Choice(name=club.name, value=str(club.id)) for club in clubs]
 
     @app_commands.command(name="infos")
     @app_commands.autocomplete(club=autocomplete_club)
