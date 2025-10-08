@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import discord
-from discord import Interaction, Member, app_commands
+from discord import Interaction, Member, app_commands, utils
 from discord.app_commands import Choice, Transform, Transformer
 from discord.ext import commands
 from discord.ext.commands import BadArgument
@@ -51,22 +50,27 @@ class ClubCog(commands.GroupCog, group_name="club"):
     @app_commands.command(name="add_member")
     @app_commands.autocomplete(club=autocomplete_club)
     async def add_club_member(
-        self, interaction: Interaction, club: int, member: Member
+        self,
+        interaction: Interaction,
+        club: Transform[ClubSchema, ClubTransformer],
+        member: Member,
     ):
         await interaction.response.defer(thinking=True)
-        club = next(
-            (c for _id, c in self.settings.guild.clubs.items() if _id == club), None
-        )
-        if not club:
-            await interaction.followup.send("Ce club n'a pas été trouvé")
-            return
-        if not interaction.user.get_role(club.president_role_id):
-            await interaction.followup.send(
-                "Seul le président du club peut utiliser cette commande"
-            )
-            return
-        await member.add_roles(interaction.guild.get_role(club.member_role_id))
-        await interaction.followup.send("Rôle attribué :thumbs_up:")
+        # look if the club exist in the JSON file
+        if club.name in self.club_service.club_discord:
+            club_ = self.club_service.club_discord[club.name]
+            is_pres = interaction.user.get_role(club_["id_role_pres"])
+            if is_pres is not None:  # look if the user is the president of the club
+                role = utils.get(member.guild.roles, id=club_["id_role_membre"])
+                await self.club_service.add_member(club_, role, member)
+                await interaction.followup.send("Rôle attribué :thumbs_up:")
+
+            else:
+                await interaction.followup.send(
+                    "Seul le président du club peut ajouter un membre"
+                )
+        else:
+            await interaction.followup.send(f"Le club : {club.name} n'existe pas")
 
     @app_commands.command(name="create")
     @app_commands.autocomplete(club=autocomplete_club)
@@ -77,7 +81,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         serv = interaction.guild
 
         # look if the club is already create
-        if discord.utils.get(serv.categories, name=club.name) is None:
+        if club.name not in self.club_service.club_discord:
             await self.club_service.create_club(club.name, serv)
             await interaction.followup.send(f"Le club : {club.name} à été créé")
 
