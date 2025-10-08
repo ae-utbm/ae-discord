@@ -47,6 +47,37 @@ class ClubCog(commands.GroupCog, group_name="club"):
         await interaction.response.defer(thinking=True)
         await interaction.followup.send(embed=self.club_service.embed(club))
 
+    @app_commands.command(name="remove_member")
+    @app_commands.autocomplete(club=autocomplete_club)
+    async def remove_club_member(
+        self,
+        interaction: Interaction,
+        club: Transform[ClubSchema, ClubTransformer],
+        member: Member,
+    ):
+        await interaction.response.defer(thinking=True)
+        # look if the club exist in the JSON file
+        if club.name in self.club_service.club_discord:
+            club_ = self.club_service.club_discord[club.name]
+            is_pres = interaction.user.get_role(club_["id_role_pres"])
+            if is_pres is not None:  # look if the user is the president of the club
+                role = utils.get(member.guild.roles, id=club_["id_role_membre"])
+                if role in member.roles:
+                    await self.club_service.remove_member(club_, role, member)
+                    await interaction.followup.send("Rôle supprimée :thumbs_up:")
+
+                else:
+                    await interaction.followup.send(
+                        "Cet utilisateur n'est pas dans le club"
+                    )
+
+            else:
+                await interaction.followup.send(
+                    "Seul le président du club peut ajouter un membre"
+                )
+        else:
+            await interaction.followup.send(f"Le club : {club.name} n'existe pas")
+
     @app_commands.command(name="add_member")
     @app_commands.autocomplete(club=autocomplete_club)
     async def add_club_member(

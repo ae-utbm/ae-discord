@@ -158,3 +158,9 @@ class ClubService:
         await member.add_roles(role)
         with open(PATH + "/club.json", "w") as f:
             json.dump(self.club_discord, f)
+
+    async def remove_member(self, club, role, member):
+        self.club_discord[club["name"]]["id_membre"].remove(member.id)
+        await member.remove_roles(role)
+        with open(str(BASE_DIR / "data/club.json"), "w") as f:
+            json.dump(self.club_discord, f)
