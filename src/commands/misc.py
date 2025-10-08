@@ -11,5 +11,5 @@ if TYPE_CHECKING:
 
 class MiscCog(commands.Cog):
     @app_commands.command(name="ping")
-    async def sync_commands(self, interaction: Interaction[AeBot]):
+    async def ping(self, interaction: Interaction[AeBot]):
         await interaction.response.send_message("pong")

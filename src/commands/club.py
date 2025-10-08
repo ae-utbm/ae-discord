@@ -52,10 +52,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     @app_commands.command(name="add_member")
     @app_commands.autocomplete(club=autocomplete_club)
     async def add_club_member(
-        self,
-        interaction: Interaction,
-        club: int,
-        member: Member,
+        self, interaction: Interaction, club: int, member: Member
     ):
         await interaction.response.defer(thinking=True)
         club = next(
