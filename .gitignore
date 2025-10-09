@@ -106,3 +106,4 @@ venv.bak/
 
 bot.toml
 data/
+data/club.json
