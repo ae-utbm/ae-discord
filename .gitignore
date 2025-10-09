@@ -105,4 +105,4 @@ venv.bak/
 .pypirc
 
 bot.toml
-data/
+#data/
