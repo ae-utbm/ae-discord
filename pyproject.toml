@@ -38,3 +38,6 @@ select = [
     "TCH", # type-checking block
     "UP", # forbid outdated syntax
 ]
+
+[tool.ruff.format]
+line-ending = "lf"
