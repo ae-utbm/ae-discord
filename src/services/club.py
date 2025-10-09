@@ -58,8 +58,12 @@ class ClubService:
         self._club_cache = {}
         self._bot = bot
 
-    async def search_club(self, current: str) -> list[SimpleClubSchema]:
+    async def search_club(
+        self, current: str, *, only_existing: bool
+    ) -> list[SimpleClubSchema]:
         clubs = await self._client.search_clubs(current)
+        if clubs and only_existing:
+            clubs = [c for c in clubs if str(c.id) in DiscordClub.load_all()]
         return clubs if clubs is not None else []
 
     async def get_club(self, club_id: int) -> ClubSchema | None:

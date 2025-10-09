@@ -35,7 +35,15 @@ class ClubCog(commands.GroupCog, group_name="club"):
         self, _interaction: Interaction, current: str
     ) -> list[Choice]:
         """Autocompletion for clubs."""
-        clubs = await self.club_service.search_club(current)
+        clubs = await self.club_service.search_club(current, only_existing=False)
+        clubs = clubs[:25]  # discord autocomplete can have at most 25 items
+        return [Choice(name=club.name, value=str(club.id)) for club in clubs]
+
+    async def autocomplete_existing_club(
+        self, _interaction: Interaction, current: str
+    ) -> list[Choice]:
+        """Autocompletion for clubs that have a channel in the guild"""
+        clubs = await self.club_service.search_club(current, only_existing=True)
         clubs = clubs[:25]  # discord autocomplete can have at most 25 items
         return [Choice(name=club.name, value=str(club.id)) for club in clubs]
 
@@ -48,7 +56,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         await interaction.followup.send(embed=self.club_service.embed(club))
 
     @app_commands.command(name="remove_member")
-    @app_commands.autocomplete(club=autocomplete_club)
+    @app_commands.autocomplete(club=autocomplete_existing_club)
     async def remove_club_member(
         self,
         interaction: Interaction,
@@ -77,7 +85,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         )
 
     @app_commands.command(name="add_member")
-    @app_commands.autocomplete(club=autocomplete_club)
+    @app_commands.autocomplete(club=autocomplete_existing_club)
     async def add_club_member(
         self,
         interaction: Interaction,
@@ -96,6 +104,9 @@ class ClubCog(commands.GroupCog, group_name="club"):
             await interaction.followup.send(
                 "Seul le président du club et les admins peuvent ajouter un membre"
             )
+            return
+        if member.id in discord_club.members:
+            await interaction.followup.send("Cet utilisateur est déjà dans le club")
             return
         await self.club_service.add_member(discord_club, member)
         await interaction.followup.send(
