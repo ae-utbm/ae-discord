@@ -2,6 +2,7 @@
 .idea
 *.vscode
 *.log
+log
 .env
 
 # File-based project format
