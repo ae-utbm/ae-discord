@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime
+from logging import handlers
 from typing import TYPE_CHECKING
 
 from discord import Guild, Intents, Interaction
@@ -13,7 +14,7 @@ from src.client import SithClient
 from src.commands.admin import AdminCog
 from src.commands.club import ClubCog
 from src.commands.misc import MiscCog
-from src.settings import Settings
+from src.settings import BASE_DIR, Settings
 
 if TYPE_CHECKING:
     from discord.app_commands import Command
@@ -67,7 +68,22 @@ class AeBot(commands.Bot):
 async def main():
     async with SithClient() as client:
         bot = AeBot(client)
+        # Setup the logging (stream handler and file handler)
         setup_logging()
+        (BASE_DIR / "data").mkdir(exist_ok=True)
+        (BASE_DIR / "log").mkdir(exist_ok=True)
+        handler = handlers.RotatingFileHandler(
+            filename=BASE_DIR / "log/bot.log",
+            maxBytes=10485760,  # 10Mo
+            backupCount=5,
+        )
+        formatter = logging.Formatter(
+            "[{asctime}] [{levelname:<8}] {name}: {message}",
+            "%Y-%m-%d %H:%M:%S",
+            style="{",
+        )
+        setup_logging(handler=handler, formatter=formatter)
+
         await bot.start(bot.settings.bot.token.get_secret_value())
 
 

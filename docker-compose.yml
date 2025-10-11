@@ -1,0 +1,6 @@
+services:
+  discord:
+    build: .
+    volumes:
+      - /data:/app/data
+      - ./log:/app/log
