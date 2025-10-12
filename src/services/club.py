@@ -1,26 +1,68 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import json
+from typing import TYPE_CHECKING, Annotated, Self
 from urllib.parse import urljoin
 
-import discord
-from discord import Embed
+from discord import Embed, PermissionOverwrite, utils
+from pydantic import BaseModel, PlainSerializer
+
+from src.settings import BASE_DIR, Settings
 
 if TYPE_CHECKING:
+    from discord import Guild, Member
+
     from src.client import ClubSchema, SimpleClubSchema, SithClient
     from src.main import AeBot
+
+
+class DiscordClub(BaseModel):
+    """Pydantic model representing data about a club on the discord guild.
+
+    It can also manage interaction with the internal data cache.
+    """
+
+    name: str
+    sith_id: int
+    category_id: int
+    president_role_id: int
+    president_sith_id: int | None = None
+    treasurer_role_id: int
+    treasurer_sith_id: int | None = None
+    member_role_id: int
+    member_sith_id: int | None = None
+    members: Annotated[set[int], PlainSerializer(list)]
+
+    @classmethod
+    def load_all(cls) -> dict[str, dict]:
+        return json.loads((BASE_DIR / "data/club.json").read_text())
+
+    @classmethod
+    def load(cls, club_id: int) -> Self | None:
+        club = cls.load_all().get(str(club_id))
+        return cls.model_validate(club) if club is not None else club
+
+    def save(self):
+        all_clubs = self.load_all()
+        all_clubs[str(self.sith_id)] = self.model_dump()
+        (BASE_DIR / "data/club.json").write_text(json.dumps(all_clubs))
 
 
 class ClubService:
     """Manage features directly related to clubs."""
 
     def __init__(self, client: SithClient, bot: AeBot):
+        self._config = Settings()
         self._client = client
         self._club_cache = {}
         self._bot = bot
 
-    async def search_club(self, current: str) -> list[SimpleClubSchema]:
+    async def search_club(
+        self, current: str, *, only_existing: bool
+    ) -> list[SimpleClubSchema]:
         clubs = await self._client.search_clubs(current)
+        if clubs and only_existing:
+            clubs = [c for c in clubs if str(c.id) in DiscordClub.load_all()]
         return clubs if clubs is not None else []
 
     async def get_club(self, club_id: int) -> ClubSchema | None:
@@ -46,24 +88,50 @@ class ClubService:
             )
         return embed
 
-    async def create_club(self, club_name: str, serv):
+    async def create_club(self, club: ClubSchema, guild: Guild):
         # create the role for member, presidence and treasurer
-        president = await serv.create_role(name=f"Président {club_name}")
-        tresorier = await serv.create_role(name=f"Trésorier {club_name}")
-        membre = await serv.create_role(name=f"Membre {club_name}", mentionable=True)
+        president = await guild.create_role(name=f"Président {club.name}")
+        treasurer = await guild.create_role(name=f"Trésorier {club.name}")
+        member = await guild.create_role(name=f"Membre {club.name}", mentionable=True)
 
         # create the clubs category
         overwrites = {
-            serv.default_role: discord.PermissionOverwrite(read_messages=False),
-            president: discord.PermissionOverwrite(
-                read_messages=True, manage_channels=True
-            ),
-            membre: discord.PermissionOverwrite(read_messages=True),
-            tresorier: discord.PermissionOverwrite(read_messages=True),
+            guild.default_role: PermissionOverwrite(read_messages=False),
+            president: PermissionOverwrite(read_messages=True, manage_channels=True),
+            member: PermissionOverwrite(read_messages=True),
+            treasurer: PermissionOverwrite(read_messages=True),
+        }
+        news_overwrite = {
+            member: PermissionOverwrite(send_messages=False),
+            treasurer: PermissionOverwrite(send_messages=False),
+            president: PermissionOverwrite(send_messages=True),
         }
 
-        categorie = await serv.create_category(club_name, overwrites=overwrites)
+        category = await guild.create_category(club.name, overwrites=overwrites)
+        await category.create_text_channel(
+            f"Annonces-{club.name}", overwrites=news_overwrite, news=True, position=0
+        )
+        await category.create_text_channel(f"Général-{club.name}")
+        await category.create_voice_channel(f"Général-{club.name}")
+        new_club = DiscordClub(
+            sith_id=club.id,
+            name=club.name,
+            president_role_id=president.id,
+            treasurer_role_id=treasurer.id,
+            member_role_id=member.id,
+            category_id=category.id,
+            members=set(),
+        )
+        new_club.save()
 
-        # create default channel
-        await serv.create_text_channel(f"Général-{club_name}", category=categorie)
-        await serv.create_voice_channel(f"Général-{club_name}", category=categorie)
+    async def add_member(self, club: DiscordClub, member: Member):
+        role = utils.get(member.guild.roles, id=club.member_role_id)
+        await member.add_roles(role, reason=f"{member.name} joined club {club.name}")
+        club.members.add(member.id)
+        club.save()
+
+    async def remove_member(self, club: DiscordClub, member: Member):
+        role = utils.get(member.guild.roles, id=club.member_role_id)
+        await member.remove_roles(role, reason=f"{member.name} leaved club {club.name}")
+        club.members.remove(member.id)
+        club.save()
