@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import json
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 from discord import Embed, PermissionOverwrite, utils
-from pydantic import BaseModel
 
-from src.settings import BASE_DIR, Settings
+from db.models import Club
+from src.settings import Settings
 
 if TYPE_CHECKING:
     from discord import Guild, Member
@@ -16,36 +15,16 @@ if TYPE_CHECKING:
     from src.main import AeBot
 
 
-class DiscordClub(BaseModel):
-    """Pydantic model representing data about a club on the discord guild.
+class ClubError(Exception):
+    """Errors related to operations on clubs"""
 
-    It can also manage interaction with the internal data cache.
-    """
 
-    name: str
-    sith_id: int
-    category_id: int
-    president_role_id: int
-    president_sith_id: int | None = None
-    treasurer_role_id: int
-    treasurer_sith_id: int | None = None
-    member_role_id: int
-    member_sith_id: int | None = None
-    former_member_role_id: int
+class ClubExists(ClubError):
+    """Trying to create a club that already exists"""
 
-    @classmethod
-    def load_all(cls) -> dict[str, dict]:
-        return json.loads((BASE_DIR / "data/club.json").read_text())
 
-    @classmethod
-    def load(cls, club_id: int) -> Self | None:
-        club = cls.load_all().get(str(club_id))
-        return cls.model_validate(club) if club is not None else club
-
-    def save(self):
-        all_clubs = self.load_all()
-        all_clubs[str(self.sith_id)] = self.model_dump()
-        (BASE_DIR / "data/club.json").write_text(json.dumps(all_clubs))
+class ClubDoesNotExist(ClubError):
+    """Trying to use a club that does not exist"""
 
 
 class ClubService:
@@ -62,7 +41,8 @@ class ClubService:
     ) -> list[SimpleClubSchema]:
         clubs = await self._client.search_clubs(current)
         if clubs and only_existing:
-            clubs = [c for c in clubs if str(c.id) in DiscordClub.load_all()]
+            clubs_ids = [c[0] for c in Club.select(Club.sith_id).tuples()]
+            clubs = [c for c in clubs if c.id in clubs_ids]
         return clubs if clubs is not None else []
 
     async def get_club(self, club_id: int) -> ClubSchema | None:
@@ -98,6 +78,8 @@ class ClubService:
         return embed
 
     async def create_club(self, club: ClubSchema, guild: Guild):
+        if Club.filter(Club.sith_id == club.id).exists():
+            raise ClubExists
         # create the role for member, presidence and treasurer
         president = await guild.create_role(name=f"Responsable {club.name}")
         treasurer = await guild.create_role(name=f"Trésorier {club.name}")
@@ -129,18 +111,17 @@ class ClubService:
         )
         await category.create_text_channel(f"Général-{club.name}")
         await category.create_voice_channel(f"Général-{club.name}")
-        new_club = DiscordClub(
-            sith_id=club.id,
+        Club.create(
             name=club.name,
+            category_id=category.id,
+            sith_id=club.id,
             president_role_id=president.id,
             treasurer_role_id=treasurer.id,
             member_role_id=member.id,
             former_member_role_id=former_member.id,
-            category_id=category.id,
         )
-        new_club.save()
 
-    async def add_member(self, club: DiscordClub, member: Member):
+    async def add_member(self, club: Club, member: Member):
         role = utils.get(member.guild.roles, id=club.member_role_id)
         former = utils.get(member.guild.roles, id=club.former_member_role_id)
         if former in member.roles:
@@ -148,19 +129,17 @@ class ClubService:
                 former, reason=f"{member.name} joined club {club.name}"
             )
         await member.add_roles(role, reason=f"{member.name} joined club {club.name}")
-        club.save()
 
-    async def remove_member(self, club: DiscordClub, member: Member):
+    async def remove_member(self, club: Club, member: Member):
         role = utils.get(member.guild.roles, id=club.member_role_id)
         former = utils.get(member.guild.roles, id=club.former_member_role_id)
         await member.remove_roles(role, reason=f"{member.name} left club {club.name}")
         await member.add_roles(former, reason=f"{member.name} left club {club.name}")
-        club.save()
 
     async def handover(
         self, club: ClubSchema, new_pres: Member, new_treso: Member, guild: Guild
     ):
-        club = DiscordClub.load(club.id)
+        club = Club.get_or_none(Club.sith_id == club.id)
 
         # removing former presidence and treasurer
         role_pres = utils.get(guild.roles, id=club.president_role_id)
@@ -190,7 +169,7 @@ class ClubService:
         )
         await category.move(above=highest_inactive)
 
-    async def stop_club(self, club: DiscordClub, guild: Guild):
+    async def stop_club(self, club: Club, guild: Guild):
         role_pres = utils.get(guild.roles, id=club.president_role_id)
         role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
         role_member = utils.get(guild.roles, id=club.member_role_id)
