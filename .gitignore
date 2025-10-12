@@ -66,6 +66,7 @@ cover/
 *.pot
 
 local_settings.py
+*.sqlite
 *.sqlite3
 *.sqlite3-journal
 

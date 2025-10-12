@@ -14,6 +14,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "discord-py", extra = ["speed"] },
+    { name = "peewee" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pytz" },
@@ -29,6 +30,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.0" },
     { name = "discord-py", extras = ["speed"], specifier = ">=2.6.4" },
+    { name = "peewee", specifier = ">=3.18.2" },
     { name = "pydantic", specifier = ">=2.12.0" },
     { name = "pydantic-settings", specifier = ">=2.11.0" },
     { name = "pytz", specifier = ">=2025.2" },
@@ -627,6 +629,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/15/58/358f6846410a6b4958b74734727e582ed971e13d335d6c7ce3e47730493e/orjson-3.11.3-cp314-cp314-win_amd64.whl", hash = "sha256:317bbe2c069bbc757b1a2e4105b64aacd3bc78279b66a6b9e51e846e4809f804", size = 131351, upload-time = "2025-08-26T17:46:15.27Z" },
     { url = "https://files.pythonhosted.org/packages/28/01/d6b274a0635be0468d4dbd9cafe80c47105937a0d42434e805e67cd2ed8b/orjson-3.11.3-cp314-cp314-win_arm64.whl", hash = "sha256:e8f6a7a27d7b7bec81bd5924163e9af03d49bbb63013f107b48eb5d16db711bc", size = 125985, upload-time = "2025-08-26T17:46:16.67Z" },
 ]
+
+[[package]]
+name = "peewee"
+version = "3.18.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/89/76f6f1b744c8608e0d416b588b9d63c2a500ff800065ae610f7c80f532d6/peewee-3.18.2.tar.gz", hash = "sha256:77a54263eb61aff2ea72f63d2eeb91b140c25c1884148e28e4c0f7c4f64996a0", size = 949220, upload-time = "2025-07-08T12:52:03.941Z" }
 
 [[package]]
 name = "platformdirs"
