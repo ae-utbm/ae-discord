@@ -4,8 +4,7 @@ import json
 from typing import TYPE_CHECKING, Annotated, Self
 from urllib.parse import urljoin
 
-import discord
-from discord import Embed, utils
+from discord import Embed, PermissionOverwrite, utils
 from pydantic import BaseModel, PlainSerializer
 
 from src.settings import BASE_DIR, Settings
@@ -97,15 +96,21 @@ class ClubService:
 
         # create the clubs category
         overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            president: discord.PermissionOverwrite(
-                read_messages=True, manage_channels=True
-            ),
-            member: discord.PermissionOverwrite(read_messages=True),
-            treasurer: discord.PermissionOverwrite(read_messages=True),
+            guild.default_role: PermissionOverwrite(read_messages=False),
+            president: PermissionOverwrite(read_messages=True, manage_channels=True),
+            member: PermissionOverwrite(read_messages=True),
+            treasurer: PermissionOverwrite(read_messages=True),
+        }
+        news_overwrite = {
+            member: PermissionOverwrite(send_messages=False),
+            treasurer: PermissionOverwrite(send_messages=False),
+            president: PermissionOverwrite(send_messages=True),
         }
 
         category = await guild.create_category(club.name, overwrites=overwrites)
+        await category.create_text_channel(
+            f"Annonces-{club.name}", overwrites=news_overwrite, news=True, position=0
+        )
         await category.create_text_channel(f"Général-{club.name}")
         await category.create_voice_channel(f"Général-{club.name}")
         new_club = DiscordClub(
