@@ -126,3 +126,30 @@ class ClubCog(commands.GroupCog, group_name="club"):
         else:
             await self.club_service.create_club(club, interaction.guild)
             await interaction.followup.send(f"Le club : {club.name} à été créé")
+
+    @app_commands.command(name="passation")
+    @app_commands.autocomplete(club=autocomplete_existing_club)
+    async def handover(
+        self,
+        interaction: Interaction,
+        club: Transform[ClubSchema, ClubTransformer],
+        new_pres: Member,
+        new_treso: Member,
+    ):
+        await interaction.response.defer(thinking=True)
+        discord_club = DiscordClub.load(club.id)
+
+        if not discord_club:
+            await interaction.followup.send(f"Le club : {club.name} n'existe pas")
+            return
+        if (
+            not interaction.user.guild_permissions.manage_roles
+            and not interaction.user.get_role(discord_club.president_role_id)
+        ):
+            await interaction.followup.send(
+                "Seul le président du club et les admins peuvent retirer un membre"
+            )
+            return
+
+        await self.club_service.handover(club, new_pres, new_treso, interaction.guild)
+        await interaction.followup.send("La passation est réussi")
