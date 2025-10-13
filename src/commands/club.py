@@ -126,3 +126,42 @@ class ClubCog(commands.GroupCog, group_name="club"):
         else:
             await self.club_service.create_club(club, interaction.guild)
             await interaction.followup.send(f"Le club : {club.name} à été créé")
+
+    @app_commands.command(name="passation")
+    @app_commands.autocomplete(club=autocomplete_existing_club)
+    @app_commands.checks.has_permissions(manage_roles=True)
+    async def handover(
+        self,
+        interaction: Interaction,
+        club: Transform[ClubSchema, ClubTransformer],
+        new_pres: Member,
+        new_treso: Member,
+    ):
+        await interaction.response.defer(thinking=True)
+        discord_club = DiscordClub.load(club.id)
+        guild = interaction.guild
+
+        if not discord_club:
+            await interaction.followup.send(f"Le club : {club.name} n'existe pas")
+            return
+
+        await self.club_service.handover(club, new_pres, new_treso, guild)
+        annonce = await self.club_service.get_channel(
+            guild, discord_club.category_id, f"annonces {club.name}".lower()
+        )
+
+        if annonce:
+            await annonce.send(
+                f"La passation est réussie !! {new_pres.mention} Vous êtes le nouveau "
+                f"président du club {club.name}"
+                f" et {new_treso.mention} le nouveau trésorier !!"
+            )
+
+        else:
+            await interaction.followup.send(
+                "Attention, ce club n'a ses salons de discussion.\n"
+                "La passation va quand même se faire, mais il faut "
+                "contacter un des mainteneurs du bots pour remettre "
+                "les salons en place"
+            )
+        await interaction.followup.send("Passation effectuée")

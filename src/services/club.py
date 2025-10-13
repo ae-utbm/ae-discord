@@ -70,6 +70,15 @@ class ClubService:
             self._club_cache[club_id] = await self._client.get_club(club_id)
         return self._club_cache[club_id]
 
+    async def get_channel(self, guild: Guild, category_id: int, name: str):
+        category = utils.get(guild.categories, id=category_id)
+        channels_in_category = category.channels
+        for channel in channels_in_category:
+            channel_name = channel.name.lower().replace("-", " ")
+            name = name.lower().replace("'", "")
+            if channel_name == name:
+                return channel
+
     def embed(self, club: ClubSchema) -> Embed:
         """Return an discord embed with infos about this club."""
         embed = Embed(title=club.name, description=club.short_description)
@@ -135,3 +144,22 @@ class ClubService:
         await member.remove_roles(role, reason=f"{member.name} leaved club {club.name}")
         club.members.remove(member.id)
         club.save()
+
+    async def handover(
+        self, club: ClubSchema, new_pres: Member, new_treso: Member, guild: Guild
+    ):
+        club = DiscordClub.load(club.id)
+
+        # removing former presidence and treasurer
+        role_pres = utils.get(guild.roles, id=club.president_role_id)
+        role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
+        l_pres = role_pres.members
+        l_treso = role_treso.members
+        for e in l_treso:
+            await e.remove_roles(role_treso, reason=f"Passation du club : {club.name}")
+        for e in l_pres:
+            await e.remove_roles(role_pres, reason=f"Passation du club : {club.name}")
+
+        # add new presidence and treasurer
+        await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
+        await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
