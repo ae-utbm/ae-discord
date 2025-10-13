@@ -152,4 +152,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
             return
 
         await self.club_service.handover(club, new_pres, new_treso, interaction.guild)
-        await interaction.followup.send("La passation est réussi")
+        await interaction.followup.send(
+            f"La passation est réussi !! {new_pres.mention} Vous êtes le nouveau "
+            f"président du club {club.name} et {new_treso.mention} le nouveau trésorier"
+        )
