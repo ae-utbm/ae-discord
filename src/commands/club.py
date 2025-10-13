@@ -129,6 +129,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
 
     @app_commands.command(name="passation")
     @app_commands.autocomplete(club=autocomplete_existing_club)
+    @app_commands.checks.has_permissions(manage_roles=True)
     async def handover(
         self,
         interaction: Interaction,
@@ -143,11 +144,6 @@ class ClubCog(commands.GroupCog, group_name="club"):
         if not discord_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
-        if not interaction.user.guild_permissions.manage_roles:
-            await interaction.followup.send(
-                "Seul les admins peuvent effectuer une passation de club"
-            )
-            return
 
         await self.club_service.handover(club, new_pres, new_treso, guild)
         annonce = await self.club_service.get_channel(
@@ -156,13 +152,16 @@ class ClubCog(commands.GroupCog, group_name="club"):
 
         if annonce:
             await annonce.send(
-                f"La passation est réussi !! {new_pres.mention} Vous êtes le nouveau "
+                f"La passation est réussie !! {new_pres.mention} Vous êtes le nouveau "
                 f"président du club {club.name}"
                 f" et {new_treso.mention} le nouveau trésorier !!"
             )
 
-            await interaction.followup.send("Passation effectuée")
-
-        await interaction.followup.send(
-            "Erreur : channel non trouvé\npassation effectuer"
-        )
+        else:
+            await interaction.followup.send(
+                "Attention, ce club n'a ses salons de discussion.\n"
+                "La passation va quand même se faire, mais il faut "
+                "contacter un des mainteneurs du bots pour remettre "
+                "les salons en place"
+            )
+        await interaction.followup.send("Passation effectuée")

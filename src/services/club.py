@@ -74,8 +74,8 @@ class ClubService:
         category = utils.get(guild.categories, id=category_id)
         channels_in_category = category.channels
         for channel in channels_in_category:
-            channel_name = " ".join(channel.name.lower().split("-"))
-            name = "".join(name.lower().split("'"))
+            channel_name = channel.name.lower().replace("-", " ")
+            name = name.lower().replace("'", "")
             if channel_name == name:
                 return channel
 
