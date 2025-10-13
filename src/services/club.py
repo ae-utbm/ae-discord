@@ -70,6 +70,15 @@ class ClubService:
             self._club_cache[club_id] = await self._client.get_club(club_id)
         return self._club_cache[club_id]
 
+    async def get_channel(self, guild: Guild, category_id: int, name: str):
+        category = utils.get(guild.categories, id=category_id)
+        channels_in_category = category.channels
+        for channel in channels_in_category:
+            channel_name = " ".join(channel.name.lower().split("-"))
+            name = "".join(name.lower().split("'"))
+            if channel_name == name:
+                return channel
+
     def embed(self, club: ClubSchema) -> Embed:
         """Return an discord embed with infos about this club."""
         embed = Embed(title=club.name, description=club.short_description)

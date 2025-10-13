@@ -138,22 +138,31 @@ class ClubCog(commands.GroupCog, group_name="club"):
     ):
         await interaction.response.defer(thinking=True)
         discord_club = DiscordClub.load(club.id)
+        guild = interaction.guild
 
         if not discord_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
-        if (
-            not interaction.user.guild_permissions.manage_roles
-            and not interaction.user.get_role(discord_club.president_role_id)
-        ):
+        if not interaction.user.guild_permissions.manage_roles:
             await interaction.followup.send(
-                "Seul le président du club et les admins peuvent retirer un membre"
+                "Seul les admins peuvent effectuer une passation de club"
             )
             return
 
-        await self.club_service.handover(club, new_pres, new_treso, interaction.guild)
+        await self.club_service.handover(club, new_pres, new_treso, guild)
+        annonce = await self.club_service.get_channel(
+            guild, discord_club.category_id, f"annonces {club.name}".lower()
+        )
+
+        if annonce:
+            await annonce.send(
+                f"La passation est réussi !! {new_pres.mention} Vous êtes le nouveau "
+                f"président du club {club.name}"
+                f" et {new_treso.mention} le nouveau trésorier !!"
+            )
+
+            await interaction.followup.send("Passation effectuée")
+
         await interaction.followup.send(
-            f"La passation est réussi !! {new_pres.mention} Vous êtes le nouveau "
-            f"président du club {club.name}"
-            " et {new_treso.mention} le nouveau trésorier !!"
+            "Erreur : channel non trouvé\npassation effectuer"
         )
