@@ -135,7 +135,6 @@ class ClubService:
             member_role_id=member.id,
             former_member_role_id=former_member.id,
             category_id=category.id,
-            members=set(),
         )
         new_club.save()
 

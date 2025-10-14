@@ -136,8 +136,8 @@ class ClubCog(commands.GroupCog, group_name="club"):
         self,
         interaction: Interaction,
         club: Transform[ClubSchema, ClubTransformer],
-        new_pres: Member,
-        new_treso: Member,
+        new_president: Member,
+        new_treasurer: Member,
     ):
         await interaction.response.defer(thinking=True)
         discord_club = DiscordClub.load(club.id)
@@ -147,16 +147,16 @@ class ClubCog(commands.GroupCog, group_name="club"):
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
 
-        await self.club_service.handover(club, new_pres, new_treso, guild)
+        await self.club_service.handover(club, new_president, new_treasurer, guild)
         annonce = await self.club_service.get_channel(
             guild, discord_club.category_id, f"annonces {club.name}".lower()
         )
 
         if annonce:
             await annonce.send(
-                f"La passation est réussie !! {new_pres.mention} Vous êtes le nouveau "
-                f"président du club {club.name}"
-                f" et {new_treso.mention} le nouveau trésorier !!"
+                f"La passation est réussie !! {new_president.mention} Vous êtes"
+                f"le nouveau président du club {club.name}"
+                f" et {new_treasurer.mention} le nouveau trésorier !!"
             )
 
         else:
