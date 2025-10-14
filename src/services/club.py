@@ -180,6 +180,9 @@ class ClubService:
         await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
         await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
         category = utils.get(guild.categories, id=club.category_id)
+        if category.name == club.name + " [inactif]":
+            await category.edit(position=4, name=club.name)
+
         await category.edit(position=4)
         # why 4 ? because in our server we have 3 prime categories
 
@@ -191,7 +194,7 @@ class ClubService:
         old_member = {*role_pres.members, *role_treso.members, *role_member.members}
         total_channels = len(guild.channels)
         category = utils.get(guild.categories, id=club.category_id)
-        await category.edit(position=total_channels - 1)
+        await category.edit(position=total_channels - 1, name=club.name + " [inactif]")
 
         for e in old_member:
             await e.remove_roles(
