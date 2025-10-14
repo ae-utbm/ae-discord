@@ -184,6 +184,6 @@ class ClubCog(commands.GroupCog, group_name="club"):
         if annonce:
             await annonce.send(
                 "Le club, n'ayant pas été repris, est "
-                "temporairement fermer jusqu'à reprise du club"
+                "temporairement fermé jusqu'à reprise du club"
             )
         await interaction.followup.send(f"Le club : {club.name} à été arrété")
