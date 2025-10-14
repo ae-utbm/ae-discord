@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Annotated, Self
+from typing import TYPE_CHECKING, Self
 from urllib.parse import urljoin
 
 from discord import Embed, PermissionOverwrite, utils
-from pydantic import BaseModel, PlainSerializer
+from pydantic import BaseModel
 
 from src.settings import BASE_DIR, Settings
 
@@ -31,7 +31,7 @@ class DiscordClub(BaseModel):
     treasurer_sith_id: int | None = None
     member_role_id: int
     member_sith_id: int | None = None
-    members: Annotated[set[int], PlainSerializer(list)]
+    former_member_role_id: int
 
     @classmethod
     def load_all(cls) -> dict[str, dict]:
@@ -102,6 +102,9 @@ class ClubService:
         president = await guild.create_role(name=f"Président {club.name}")
         treasurer = await guild.create_role(name=f"Trésorier {club.name}")
         member = await guild.create_role(name=f"Membre {club.name}", mentionable=True)
+        former_member = await guild.create_role(
+            name=f"Ancien membre {club.name}", mentionable=True
+        )
 
         # create the clubs category
         overwrites = {
@@ -109,8 +112,10 @@ class ClubService:
             president: PermissionOverwrite(read_messages=True, manage_channels=True),
             member: PermissionOverwrite(read_messages=True),
             treasurer: PermissionOverwrite(read_messages=True),
+            former_member: PermissionOverwrite(read_messages=True),
         }
         news_overwrite = {
+            former_member: PermissionOverwrite(send_messages=False),
             member: PermissionOverwrite(send_messages=False),
             treasurer: PermissionOverwrite(send_messages=False),
             president: PermissionOverwrite(send_messages=True),
@@ -128,6 +133,7 @@ class ClubService:
             president_role_id=president.id,
             treasurer_role_id=treasurer.id,
             member_role_id=member.id,
+            former_member_role_id=former_member.id,
             category_id=category.id,
             members=set(),
         )
