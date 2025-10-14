@@ -12,7 +12,7 @@ from src.settings import BASE_DIR, Settings
 if TYPE_CHECKING:
     from discord import Guild, Member
 
-    from src.client import ClubSchema, SimpleClubSchema, SithClient
+    from src.client import ClubSchema, SimpleClubSchema
     from src.main import AeBot
 
 
@@ -51,9 +51,9 @@ class DiscordClub(BaseModel):
 class ClubService:
     """Manage features directly related to clubs."""
 
-    def __init__(self, client: SithClient, bot: AeBot):
+    def __init__(self, bot: AeBot):
         self._config = Settings()
-        self._client = client
+        self._client = bot.client
         self._club_cache = {}
         self._bot = bot
 

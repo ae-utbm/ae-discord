@@ -19,6 +19,8 @@ class ApiConfig(BaseModel):
 
 class GuildConfig(BaseModel):
     id: int
+    news_channel_id: int | None = None
+    news_role_id: int | None = None
 
 
 class BotConfig(BaseModel):
