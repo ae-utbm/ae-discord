@@ -179,6 +179,9 @@ class ClubService:
                 )
         await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
         await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
+        category = utils.get(guild.categories, id=club.category_id)
+        await category.edit(position=4)
+        # why 4 ? because in our server we have 3 prime categories
 
     async def stop_club(self, club: DiscordClub, guild: Guild):
         role_pres = utils.get(guild.roles, id=club.president_role_id)
@@ -186,6 +189,9 @@ class ClubService:
         role_member = utils.get(guild.roles, id=club.member_role_id)
         role_former = utils.get(guild.roles, id=club.former_member_role_id)
         old_member = {*role_pres.members, *role_treso.members, *role_member.members}
+        total_channels = len(guild.channels)
+        category = utils.get(guild.categories, id=club.category_id)
+        await category.edit(position=total_channels - 1)
 
         for e in old_member:
             await e.remove_roles(
