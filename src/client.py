@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import types
-from datetime import date
+from datetime import date, datetime
 
 from aiohttp import (
     ClientSession,
@@ -44,9 +44,35 @@ class SimpleClubSchema(BaseModel):
     name: str
 
 
+class ClubProfileSchema(SimpleClubSchema):
+    logo: str | None = None
+    url: str
+
+
 class ClubSearchResultSchema(BaseModel):
     count: int
     results: list[SimpleClubSchema]
+
+
+class NewsSchema(BaseModel):
+    id: int
+    title: str
+    summary: str
+    is_published: bool
+    club: ClubProfileSchema
+    url: str
+
+
+class NewsDateSchema(BaseModel):
+    id: int
+    start_date: datetime
+    end_date: datetime
+    news: NewsSchema
+
+
+class NewsDateResultSchema(BaseModel):
+    count: int
+    results: list[NewsDateSchema]
 
 
 class SithClient(ClientSession):
@@ -80,6 +106,21 @@ class SithClient(ClientSession):
             content = await res.read()
         try:
             return ClubSearchResultSchema.model_validate_json(content).results
+        except ValidationError as e:
+            self.logger.error(str(e))
+
+    async def search_news(
+        self, after: datetime | None = None, before: datetime | None = None
+    ) -> list[NewsDateSchema] | None:
+        params = {"is_published": "true"}
+        if after:
+            params["after"] = after.isoformat()
+        if before:
+            params["before"] = before.isoformat()
+        async with self.get("/api/news/date", params=params) as res:
+            content = await res.read()
+        try:
+            return NewsDateResultSchema.model_validate_json(content).results
         except ValidationError as e:
             self.logger.error(str(e))
 

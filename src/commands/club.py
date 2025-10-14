@@ -12,7 +12,6 @@ from src.services.club import ClubService, DiscordClub
 from src.settings import Settings
 
 if TYPE_CHECKING:
-    from src.client import SithClient
     from src.main import AeBot
 
 
@@ -27,8 +26,8 @@ class ClubTransformer(Transformer):
 
 
 class ClubCog(commands.GroupCog, group_name="club"):
-    def __init__(self, client: SithClient, bot: AeBot):
-        self.club_service = ClubService(client, bot)
+    def __init__(self, bot: AeBot):
+        self.club_service = ClubService(bot)
         self.settings = Settings()
 
     async def autocomplete_club(
