@@ -99,7 +99,7 @@ class ClubService:
 
     async def create_club(self, club: ClubSchema, guild: Guild):
         # create the role for member, presidence and treasurer
-        president = await guild.create_role(name=f"Président {club.name}")
+        president = await guild.create_role(name=f"Responsable {club.name}")
         treasurer = await guild.create_role(name=f"Trésorier {club.name}")
         member = await guild.create_role(name=f"Membre {club.name}", mentionable=True)
         former_member = await guild.create_role(
