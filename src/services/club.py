@@ -164,23 +164,18 @@ class ClubService:
         role_pres = utils.get(guild.roles, id=club.president_role_id)
         role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
         former = utils.get(guild.roles, id=club.former_member_role_id)
-        l_pres = role_pres.members
-        l_treso = role_treso.members
-        for e in l_treso:
-            await e.remove_roles(role_treso, reason=f"Passation du club : {club.name}")
-            await e.add_roles(former, reason=f"Passation du club : {club.name}")
-        for e in l_pres:
-            await e.remove_roles(role_pres, reason=f"Passation du club : {club.name}")
-            await e.add_roles(former, reason=f"Passation du club : {club.name}")
+        old_board = {*role_pres.members, *role_treso.members}
+        for member in old_board:
+            await member.remove_roles(
+                role_pres, role_treso, reason=f"Passation du club : {club.name}"
+            )
+            await member.add_roles(former, reason=f"Passation du club : {club.name}")
 
         # add new presidence and treasurer
-        if former in new_pres.roles:
-            await new_pres.remove_roles(
-                former, reason=f"{new_pres.name} joined club {club.name}"
-            )
-        if former in new_treso.roles:
-            await new_treso.remove_roles(
-                former, reason=f"{new_treso.name} joined club {club.name}"
-            )
+        for new_member in [new_pres, new_treso]:
+            if former in new_member.roles:
+                await new_member.remove_roles(
+                    former, reason=f"{new_pres.name} joined club {club.name}"
+                )
         await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
         await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
