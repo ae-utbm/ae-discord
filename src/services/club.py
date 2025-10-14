@@ -179,3 +179,21 @@ class ClubService:
                 )
         await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
         await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
+
+    async def stop_club(self, club: DiscordClub, guild: Guild):
+        role_pres = utils.get(guild.roles, id=club.president_role_id)
+        role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
+        role_member = utils.get(guild.roles, id=club.member_role_id)
+        role_former = utils.get(guild.roles, id=club.former_member_role_id)
+
+        for e in role_pres.members:
+            await e.remove_roles(role_pres, reason=f"Arrêt du club : {club.name}")
+            await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
+
+        for e in role_treso.members:
+            await e.remove_roles(role_pres, reason=f"Arrêt du club : {club.name}")
+            await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
+
+        for e in role_member.members:
+            await e.remove_roles(role_member, reason=f"Arrêt du club : {club.name}")
+            await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")

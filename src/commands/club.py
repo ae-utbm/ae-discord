@@ -166,3 +166,14 @@ class ClubCog(commands.GroupCog, group_name="club"):
                 "les salons en place"
             )
         await interaction.followup.send("Passation effectuée")
+
+    @app_commands.command(name="arret")
+    @app_commands.autocomplete(club=autocomplete_existing_club)
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def stop_club(
+        self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
+    ):
+        await interaction.response.defer(thinking=True)
+        discord_club = DiscordClub.load(club.id)
+        await self.club_service.stop_club(discord_club, interaction.guild)
+        await interaction.followup.send(f"Le club : {club.name} à été arrété")
