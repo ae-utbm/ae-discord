@@ -174,6 +174,16 @@ class ClubCog(commands.GroupCog, group_name="club"):
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
         await interaction.response.defer(thinking=True)
+        guild = interaction.guild
         discord_club = DiscordClub.load(club.id)
         await self.club_service.stop_club(discord_club, interaction.guild)
+        annonce = await self.club_service.get_channel(
+            guild, discord_club.category_id, f"annonces {club.name}".lower()
+        )
+
+        if annonce:
+            await annonce.send(
+                "Le club, n'ayant pas été repris, est "
+                "temporairement fermer jusqu'à reprise du club"
+            )
         await interaction.followup.send(f"Le club : {club.name} à été arrété")

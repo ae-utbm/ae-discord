@@ -185,15 +185,13 @@ class ClubService:
         role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
         role_member = utils.get(guild.roles, id=club.member_role_id)
         role_former = utils.get(guild.roles, id=club.former_member_role_id)
+        old_member = {*role_pres.members, *role_treso.members, *role_member.members}
 
-        for e in role_pres.members:
-            await e.remove_roles(role_pres, reason=f"Arrêt du club : {club.name}")
-            await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
-
-        for e in role_treso.members:
-            await e.remove_roles(role_pres, reason=f"Arrêt du club : {club.name}")
-            await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
-
-        for e in role_member.members:
-            await e.remove_roles(role_member, reason=f"Arrêt du club : {club.name}")
+        for e in old_member:
+            await e.remove_roles(
+                role_pres,
+                role_treso,
+                role_member,
+                reason=f"Arrêt du club : {club.name}",
+            )
             await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
