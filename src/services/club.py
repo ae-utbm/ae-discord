@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Annotated, Self
+from typing import TYPE_CHECKING, Self
 from urllib.parse import urljoin
 
 from discord import Embed, PermissionOverwrite, utils
-from pydantic import BaseModel, PlainSerializer
+from pydantic import BaseModel
 
 from src.settings import BASE_DIR, Settings
 
@@ -31,7 +31,7 @@ class DiscordClub(BaseModel):
     treasurer_sith_id: int | None = None
     member_role_id: int
     member_sith_id: int | None = None
-    members: Annotated[set[int], PlainSerializer(list)]
+    former_member_role_id: int
 
     @classmethod
     def load_all(cls) -> dict[str, dict]:
@@ -99,9 +99,12 @@ class ClubService:
 
     async def create_club(self, club: ClubSchema, guild: Guild):
         # create the role for member, presidence and treasurer
-        president = await guild.create_role(name=f"Président {club.name}")
+        president = await guild.create_role(name=f"Responsable {club.name}")
         treasurer = await guild.create_role(name=f"Trésorier {club.name}")
         member = await guild.create_role(name=f"Membre {club.name}", mentionable=True)
+        former_member = await guild.create_role(
+            name=f"Ancien membre {club.name}", mentionable=True
+        )
 
         # create the clubs category
         overwrites = {
@@ -109,8 +112,10 @@ class ClubService:
             president: PermissionOverwrite(read_messages=True, manage_channels=True),
             member: PermissionOverwrite(read_messages=True),
             treasurer: PermissionOverwrite(read_messages=True),
+            former_member: PermissionOverwrite(read_messages=True),
         }
         news_overwrite = {
+            former_member: PermissionOverwrite(send_messages=False),
             member: PermissionOverwrite(send_messages=False),
             treasurer: PermissionOverwrite(send_messages=False),
             president: PermissionOverwrite(send_messages=True),
@@ -128,21 +133,26 @@ class ClubService:
             president_role_id=president.id,
             treasurer_role_id=treasurer.id,
             member_role_id=member.id,
+            former_member_role_id=former_member.id,
             category_id=category.id,
-            members=set(),
         )
         new_club.save()
 
     async def add_member(self, club: DiscordClub, member: Member):
         role = utils.get(member.guild.roles, id=club.member_role_id)
+        former = utils.get(member.guild.roles, id=club.former_member_role_id)
+        if former in member.roles:
+            await member.remove_roles(
+                former, reason=f"{member.name} joined club {club.name}"
+            )
         await member.add_roles(role, reason=f"{member.name} joined club {club.name}")
-        club.members.add(member.id)
         club.save()
 
     async def remove_member(self, club: DiscordClub, member: Member):
         role = utils.get(member.guild.roles, id=club.member_role_id)
+        former = utils.get(member.guild.roles, id=club.former_member_role_id)
         await member.remove_roles(role, reason=f"{member.name} leaved club {club.name}")
-        club.members.remove(member.id)
+        await member.add_roles(former, reason=f"{member.name} leaved club {club.name}")
         club.save()
 
     async def handover(
@@ -153,13 +163,19 @@ class ClubService:
         # removing former presidence and treasurer
         role_pres = utils.get(guild.roles, id=club.president_role_id)
         role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
-        l_pres = role_pres.members
-        l_treso = role_treso.members
-        for e in l_treso:
-            await e.remove_roles(role_treso, reason=f"Passation du club : {club.name}")
-        for e in l_pres:
-            await e.remove_roles(role_pres, reason=f"Passation du club : {club.name}")
+        former = utils.get(guild.roles, id=club.former_member_role_id)
+        old_board = {*role_pres.members, *role_treso.members}
+        for member in old_board:
+            await member.remove_roles(
+                role_pres, role_treso, reason=f"Passation du club : {club.name}"
+            )
+            await member.add_roles(former, reason=f"Passation du club : {club.name}")
 
         # add new presidence and treasurer
+        for new_member in [new_pres, new_treso]:
+            if former in new_member.roles:
+                await new_member.remove_roles(
+                    former, reason=f"{new_pres.name} joined club {club.name}"
+                )
         await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
         await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
