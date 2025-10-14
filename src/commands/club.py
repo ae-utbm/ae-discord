@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from discord import Interaction, Member, app_commands
+from discord import Interaction, Member, app_commands, utils
 from discord.app_commands import Choice, Transform, Transformer
 from discord.ext import commands
 from discord.ext.commands import BadArgument
@@ -65,6 +65,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     ):
         await interaction.response.defer(thinking=True)
         discord_club = DiscordClub.load(club.id)
+        role_membre = utils.get(member.guild.roles, id=discord_club.member_role_id)
         if not discord_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
@@ -76,7 +77,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
                 "Seul le président du club et les admins peuvent retirer un membre"
             )
             return
-        if member.id not in discord_club.members:
+        if role_membre not in member.roles:
             await interaction.followup.send("Cet utilisateur n'est pas dans le club")
             return
         await self.club_service.remove_member(discord_club, member)
@@ -94,6 +95,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     ):
         await interaction.response.defer(thinking=True)
         discord_club = DiscordClub.load(club.id)
+        role_membre = utils.get(member.guild.roles, id=discord_club.member_role_id)
         if not discord_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
@@ -105,7 +107,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
                 "Seul le président du club et les admins peuvent ajouter un membre"
             )
             return
-        if member.id in discord_club.members:
+        if role_membre in member.roles:
             await interaction.followup.send("Cet utilisateur est déjà dans le club")
             return
         await self.club_service.add_member(discord_club, member)

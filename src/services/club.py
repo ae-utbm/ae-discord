@@ -141,14 +141,19 @@ class ClubService:
 
     async def add_member(self, club: DiscordClub, member: Member):
         role = utils.get(member.guild.roles, id=club.member_role_id)
+        former = utils.get(member.guild.roles, id=club.former_member_role_id)
+        if former in member.roles:
+            await member.remove_roles(
+                former, reason=f"{member.name} joined club {club.name}"
+            )
         await member.add_roles(role, reason=f"{member.name} joined club {club.name}")
-        club.members.add(member.id)
         club.save()
 
     async def remove_member(self, club: DiscordClub, member: Member):
         role = utils.get(member.guild.roles, id=club.member_role_id)
+        former = utils.get(member.guild.roles, id=club.former_member_role_id)
         await member.remove_roles(role, reason=f"{member.name} leaved club {club.name}")
-        club.members.remove(member.id)
+        await member.add_roles(former, reason=f"{member.name} leaved club {club.name}")
         club.save()
 
     async def handover(
@@ -159,13 +164,24 @@ class ClubService:
         # removing former presidence and treasurer
         role_pres = utils.get(guild.roles, id=club.president_role_id)
         role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
+        former = utils.get(guild.roles, id=club.former_member_role_id)
         l_pres = role_pres.members
         l_treso = role_treso.members
         for e in l_treso:
             await e.remove_roles(role_treso, reason=f"Passation du club : {club.name}")
+            await e.add_roles(former, reason=f"Passation du club : {club.name}")
         for e in l_pres:
             await e.remove_roles(role_pres, reason=f"Passation du club : {club.name}")
+            await e.add_roles(former, reason=f"Passation du club : {club.name}")
 
         # add new presidence and treasurer
+        if former in new_pres.roles:
+            await new_pres.remove_roles(
+                former, reason=f"{new_pres.name} joined club {club.name}"
+            )
+        if former in new_treso.roles:
+            await new_treso.remove_roles(
+                former, reason=f"{new_treso.name} joined club {club.name}"
+            )
         await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
         await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
