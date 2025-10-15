@@ -153,14 +153,14 @@ class ClubCog(commands.GroupCog, group_name="club"):
 
         if annonce:
             await annonce.send(
-                f"La passation est réussie !! {new_president.mention} Vous êtes"
+                f"La passation est réussie !! {new_president.mention}, vous êtes "
                 f"le nouveau président du club {club.name}"
                 f" et {new_treasurer.mention} le nouveau trésorier !!"
             )
 
         else:
             await interaction.followup.send(
-                "Attention, ce club n'a ses salons de discussion.\n"
+                "Attention, ce club n'a pas ses salons de discussion.\n"
                 "La passation va quand même se faire, mais il faut "
                 "contacter un des mainteneurs du bots pour remettre "
                 "les salons en place"

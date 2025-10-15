@@ -151,8 +151,8 @@ class ClubService:
     async def remove_member(self, club: DiscordClub, member: Member):
         role = utils.get(member.guild.roles, id=club.member_role_id)
         former = utils.get(member.guild.roles, id=club.former_member_role_id)
-        await member.remove_roles(role, reason=f"{member.name} leaved club {club.name}")
-        await member.add_roles(former, reason=f"{member.name} leaved club {club.name}")
+        await member.remove_roles(role, reason=f"{member.name} left club {club.name}")
+        await member.add_roles(former, reason=f"{member.name} left club {club.name}")
         club.save()
 
     async def handover(
