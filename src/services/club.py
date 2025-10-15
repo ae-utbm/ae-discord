@@ -189,7 +189,6 @@ class ClubService:
             sorted(guild.categories, key=lambda c: c.position),
         )
         await category.move(above=highest_inactive)
-        # why 4 ? because in our server we have 3 prime categories
 
     async def stop_club(self, club: DiscordClub, guild: Guild):
         role_pres = utils.get(guild.roles, id=club.president_role_id)
