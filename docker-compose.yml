@@ -2,5 +2,5 @@ services:
   discord:
     build: .
     volumes:
-      - /data:/app/data
+      - ./db.sqlite3:/app/db.sqlite3
       - ./log:/app/log

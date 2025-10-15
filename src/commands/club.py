@@ -7,8 +7,9 @@ from discord.app_commands import Choice, Transform, Transformer
 from discord.ext import commands
 from discord.ext.commands import BadArgument
 
+from db.models import Club
 from src.client import ClubSchema  # noqa TC001
-from src.services.club import ClubService, DiscordClub
+from src.services.club import ClubExists, ClubService
 from src.settings import Settings
 
 if TYPE_CHECKING:
@@ -63,14 +64,14 @@ class ClubCog(commands.GroupCog, group_name="club"):
         member: Member,
     ):
         await interaction.response.defer(thinking=True)
-        discord_club = DiscordClub.load(club.id)
-        role_membre = utils.get(member.guild.roles, id=discord_club.member_role_id)
-        if not discord_club:
+        db_club = Club.get_or_none(Club.sith_id == club.id)
+        if not db_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
+        role_membre = utils.get(member.guild.roles, id=db_club.member_role_id)
         if (
             not interaction.user.guild_permissions.manage_roles
-            and not interaction.user.get_role(discord_club.president_role_id)
+            and not interaction.user.get_role(db_club.president_role_id)
         ):
             await interaction.followup.send(
                 "Seul le président du club et les admins peuvent retirer un membre"
@@ -79,7 +80,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         if role_membre not in member.roles:
             await interaction.followup.send("Cet utilisateur n'est pas dans le club")
             return
-        await self.club_service.remove_member(discord_club, member)
+        await self.club_service.remove_member(db_club, member)
         await interaction.followup.send(
             f"{member.name} a été retiré du club :thumbs_up:"
         )
@@ -93,14 +94,14 @@ class ClubCog(commands.GroupCog, group_name="club"):
         member: Member,
     ):
         await interaction.response.defer(thinking=True)
-        discord_club = DiscordClub.load(club.id)
-        role_membre = utils.get(member.guild.roles, id=discord_club.member_role_id)
-        if not discord_club:
+        db_club = Club.get_or_none(Club.sith_id == club.id)
+        role_membre = member.guild.get_role(db_club.member_role_id)
+        if not db_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
         if (
             not interaction.user.guild_permissions.manage_roles
-            and not interaction.user.get_role(discord_club.president_role_id)
+            and not interaction.user.get_role(db_club.president_role_id)
         ):
             await interaction.followup.send(
                 "Seul le président du club et les admins peuvent ajouter un membre"
@@ -109,7 +110,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         if role_membre in member.roles:
             await interaction.followup.send("Cet utilisateur est déjà dans le club")
             return
-        await self.club_service.add_member(discord_club, member)
+        await self.club_service.add_member(db_club, member)
         await interaction.followup.send(
             f"{member.name} a été ajouté au club :thumbs_up:"
         )
@@ -121,8 +122,10 @@ class ClubCog(commands.GroupCog, group_name="club"):
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
         await interaction.response.defer(thinking=True)
-        discord_club = DiscordClub.load(club.id)
-        if discord_club is not None:
+        try:
+            await self.club_service.create_club(club, interaction.guild)
+            await interaction.followup.send(f"Le club : {club.name} à été créé")
+        except ClubExists:
             await interaction.followup.send(f"Le club : {club.name} existe déjà...")
         else:
             await self.club_service.create_club(club, interaction.guild)
@@ -139,16 +142,16 @@ class ClubCog(commands.GroupCog, group_name="club"):
         new_treasurer: Member,
     ):
         await interaction.response.defer(thinking=True)
-        discord_club = DiscordClub.load(club.id)
+        db_club = Club.get_or_none(Club.sith_id == club.id)
         guild = interaction.guild
 
-        if not discord_club:
+        if not db_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
 
         await self.club_service.handover(club, new_president, new_treasurer, guild)
         annonce = await self.club_service.get_channel(
-            guild, discord_club.category_id, f"annonces {club.name}".lower()
+            guild, db_club.category_id, f"annonces {club.name}".lower()
         )
 
         if annonce:
@@ -157,12 +160,11 @@ class ClubCog(commands.GroupCog, group_name="club"):
                 f"le nouveau président du club {club.name}"
                 f" et {new_treasurer.mention} le nouveau trésorier !!"
             )
-
         else:
             await interaction.followup.send(
                 "Attention, ce club n'a pas ses salons de discussion.\n"
                 "La passation va quand même se faire, mais il faut "
-                "contacter un des mainteneurs du bots pour remettre "
+                "contacter un des mainteneurs du bot pour remettre "
                 "les salons en place"
             )
         await interaction.followup.send("Passation effectuée")
@@ -174,11 +176,10 @@ class ClubCog(commands.GroupCog, group_name="club"):
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
         await interaction.response.defer(thinking=True)
-        guild = interaction.guild
-        discord_club = DiscordClub.load(club.id)
-        await self.club_service.stop_club(discord_club, interaction.guild)
+        db_club = Club.get_or_none(Club.sith_id == club.id)
+        await self.club_service.stop_club(db_club, interaction.guild)
         annonce = await self.club_service.get_channel(
-            guild, discord_club.category_id, f"annonces {club.name}".lower()
+            interaction.guild, db_club.category_id, f"annonces {club.name}".lower()
         )
 
         if annonce:
@@ -186,4 +187,4 @@ class ClubCog(commands.GroupCog, group_name="club"):
                 "Le club, n'ayant pas été repris, est "
                 "temporairement fermé jusqu'à reprise du club"
             )
-        await interaction.followup.send(f"Le club : {club.name} à été arrété")
+        await interaction.followup.send(f"Le club : {club.name} à été arrêté")
