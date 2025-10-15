@@ -109,7 +109,9 @@ class ClubService:
         # create the clubs category
         overwrites = {
             guild.default_role: PermissionOverwrite(read_messages=False),
-            president: PermissionOverwrite(read_messages=True, manage_channels=True),
+            president: PermissionOverwrite(
+                read_messages=True, manage_channels=True, manage_permissions=True
+            ),
             member: PermissionOverwrite(read_messages=True),
             treasurer: PermissionOverwrite(read_messages=True),
             former_member: PermissionOverwrite(read_messages=True),
