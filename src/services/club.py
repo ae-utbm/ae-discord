@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 
 from discord import Embed, PermissionOverwrite, utils
 
-from db.models import Club
+from src.db.models import Club
 from src.settings import Settings
 
 if TYPE_CHECKING:
