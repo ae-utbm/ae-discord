@@ -167,7 +167,8 @@ class ClubService:
             lambda c: c.name.endswith("[inactif]"),
             sorted(guild.categories, key=lambda c: c.position),
         )
-        await category.move(above=highest_inactive)
+        if highest_inactive:
+            await category.move(before=highest_inactive)
 
     async def stop_club(self, club: Club, guild: Guild):
         role_pres = utils.get(guild.roles, id=club.president_role_id)
