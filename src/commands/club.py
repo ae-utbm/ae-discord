@@ -153,16 +153,37 @@ class ClubCog(commands.GroupCog, group_name="club"):
 
         if annonce:
             await annonce.send(
-                f"La passation est réussie !! {new_president.mention} Vous êtes"
+                f"La passation est réussie !! {new_president.mention}, vous êtes "
                 f"le nouveau président du club {club.name}"
                 f" et {new_treasurer.mention} le nouveau trésorier !!"
             )
 
         else:
             await interaction.followup.send(
-                "Attention, ce club n'a ses salons de discussion.\n"
+                "Attention, ce club n'a pas ses salons de discussion.\n"
                 "La passation va quand même se faire, mais il faut "
                 "contacter un des mainteneurs du bots pour remettre "
                 "les salons en place"
             )
         await interaction.followup.send("Passation effectuée")
+
+    @app_commands.command(name="arret")
+    @app_commands.autocomplete(club=autocomplete_existing_club)
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def stop_club(
+        self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
+    ):
+        await interaction.response.defer(thinking=True)
+        guild = interaction.guild
+        discord_club = DiscordClub.load(club.id)
+        await self.club_service.stop_club(discord_club, interaction.guild)
+        annonce = await self.club_service.get_channel(
+            guild, discord_club.category_id, f"annonces {club.name}".lower()
+        )
+
+        if annonce:
+            await annonce.send(
+                "Le club, n'ayant pas été repris, est "
+                "temporairement fermé jusqu'à reprise du club"
+            )
+        await interaction.followup.send(f"Le club : {club.name} à été arrété")

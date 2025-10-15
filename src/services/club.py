@@ -109,7 +109,9 @@ class ClubService:
         # create the clubs category
         overwrites = {
             guild.default_role: PermissionOverwrite(read_messages=False),
-            president: PermissionOverwrite(read_messages=True, manage_channels=True),
+            president: PermissionOverwrite(
+                read_messages=True, manage_channels=True, manage_permissions=True
+            ),
             member: PermissionOverwrite(read_messages=True),
             treasurer: PermissionOverwrite(read_messages=True),
             former_member: PermissionOverwrite(read_messages=True),
@@ -151,8 +153,8 @@ class ClubService:
     async def remove_member(self, club: DiscordClub, member: Member):
         role = utils.get(member.guild.roles, id=club.member_role_id)
         former = utils.get(member.guild.roles, id=club.former_member_role_id)
-        await member.remove_roles(role, reason=f"{member.name} leaved club {club.name}")
-        await member.add_roles(former, reason=f"{member.name} leaved club {club.name}")
+        await member.remove_roles(role, reason=f"{member.name} left club {club.name}")
+        await member.add_roles(former, reason=f"{member.name} left club {club.name}")
         club.save()
 
     async def handover(
@@ -179,3 +181,30 @@ class ClubService:
                 )
         await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
         await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
+        category = utils.get(guild.categories, id=club.category_id)
+        if category.name.endswith("[inactif]"):
+            await category.edit(name=club.name)
+        highest_inactive = utils.find(
+            lambda c: c.name.endswith("[inactif]"),
+            sorted(guild.categories, key=lambda c: c.position),
+        )
+        await category.move(above=highest_inactive)
+
+    async def stop_club(self, club: DiscordClub, guild: Guild):
+        role_pres = utils.get(guild.roles, id=club.president_role_id)
+        role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
+        role_member = utils.get(guild.roles, id=club.member_role_id)
+        role_former = utils.get(guild.roles, id=club.former_member_role_id)
+        old_member = {*role_pres.members, *role_treso.members, *role_member.members}
+        total_channels = len(guild.channels)
+        category = utils.get(guild.categories, id=club.category_id)
+        await category.edit(position=total_channels - 1, name=club.name + " [inactif]")
+
+        for e in old_member:
+            await e.remove_roles(
+                role_pres,
+                role_treso,
+                role_member,
+                reason=f"Arrêt du club : {club.name}",
+            )
+            await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
