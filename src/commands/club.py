@@ -9,7 +9,7 @@ from discord.ext.commands import BadArgument
 
 from src.client import ClubSchema  # noqa TC001
 from src.db.models import Club
-from src.services.club import ClubExists, ClubService
+from src.services.club import ClubService
 from src.settings import Settings
 
 if TYPE_CHECKING:
@@ -122,10 +122,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
         await interaction.response.defer(thinking=True)
-        try:
-            await self.club_service.create_club(club, interaction.guild)
-            await interaction.followup.send(f"Le club : {club.name} à été créé")
-        except ClubExists:
+        if Club.filter(Club.sith_id == club.id).exists():
             await interaction.followup.send(f"Le club : {club.name} existe déjà...")
         else:
             await self.club_service.create_club(club, interaction.guild)
