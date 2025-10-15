@@ -7,8 +7,8 @@ from discord.app_commands import Choice, Transform, Transformer
 from discord.ext import commands
 from discord.ext.commands import BadArgument
 
-from db.models import Club
 from src.client import ClubSchema  # noqa TC001
+from src.db.models import Club
 from src.services.club import ClubExists, ClubService
 from src.settings import Settings
 
