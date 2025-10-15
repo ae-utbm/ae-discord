@@ -182,10 +182,13 @@ class ClubService:
         await new_pres.add_roles(role_pres, reason=f"Passation du club : {club.name}")
         await new_treso.add_roles(role_treso, reason=f"Passation du club : {club.name}")
         category = utils.get(guild.categories, id=club.category_id)
-        if category.name == club.name + " [inactif]":
-            await category.edit(position=4, name=club.name)
-
-        await category.edit(position=4)
+        if category.name.endswith("[inactif]"):
+            await category.edit(name=club.name)
+        highest_inactive = utils.find(
+            lambda c: c.name.endswith("[inactif]"),
+            sorted(guild.categories, key=lambda c: c.position),
+        )
+        await category.move(above=highest_inactive)
         # why 4 ? because in our server we have 3 prime categories
 
     async def stop_club(self, club: DiscordClub, guild: Guild):
