@@ -9,7 +9,7 @@ from src.db.models import Club
 from src.settings import Settings
 
 if TYPE_CHECKING:
-    from discord import Guild, Member
+    from discord import Guild, Member, Message
 
     from src.client import ClubSchema, SimpleClubSchema
     from src.main import AeBot
@@ -77,7 +77,7 @@ class ClubService:
             )
         return embed
 
-    async def create_club(self, club: ClubSchema, guild: Guild):
+    async def create_club(self, club: ClubSchema, guild: Guild, mess: Message):
         if Club.filter(Club.sith_id == club.id).exists():
             raise ClubExists
         # create the role for member, presidence and treasurer
@@ -119,6 +119,7 @@ class ClubService:
             treasurer_role_id=treasurer.id,
             member_role_id=member.id,
             former_member_role_id=former_member.id,
+            message_autorole_id=mess.id,
         )
 
     async def add_member(self, club: Club, member: Member):

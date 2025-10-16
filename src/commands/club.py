@@ -132,7 +132,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
             )
 
             await mess.add_reaction("✅")
-            await self.club_service.create_club(club, interaction.guild)
+            await self.club_service.create_club(club, interaction.guild, mess)
             await interaction.followup.send(f"Le club : {club.name} à été créé")
 
     @app_commands.command(name="passation")
