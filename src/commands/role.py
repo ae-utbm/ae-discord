@@ -29,8 +29,7 @@ class RoleCog(commands.GroupCog, group_name="role"):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
         emoji = str(payload.emoji)
-
-        db_club = Club.get_or_none(Club.message_autorole_id, message.id)
+        db_club = Club.get(Club.message_autorole_id == message.id)
 
         if not db_club:
             return
