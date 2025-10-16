@@ -125,6 +125,13 @@ class ClubCog(commands.GroupCog, group_name="club"):
         if Club.filter(Club.sith_id == club.id).exists():
             await interaction.followup.send(f"Le club : {club.name} existe déjà...")
         else:
+            guild = interaction.guild
+            channel_club = utils.get(guild.channels, id=1428320894610309121)
+            mess = await channel_club.send(
+                f"Réagi à ce message pour rejoindre le club {club.name}"
+            )
+
+            await mess.add_reaction("✅")
             await self.club_service.create_club(club, interaction.guild)
             await interaction.followup.send(f"Le club : {club.name} à été créé")
 

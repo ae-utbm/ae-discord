@@ -36,6 +36,7 @@ class Club(DbBaseModel):
     treasurer_role_id = peewee.IntegerField(unique=True)
     member_role_id = peewee.IntegerField(unique=True)
     former_member_role_id = peewee.IntegerField(unique=True)
+    message_autorole_id = peewee.IntegerField(unique=True)
 
 
 def init():

@@ -130,11 +130,14 @@ class ClubService:
             )
         await member.add_roles(role, reason=f"{member.name} joined club {club.name}")
 
-    async def remove_member(self, club: Club, member: Member):
+    async def remove_member(self, club: Club, member: Member, _former=1):
         role = utils.get(member.guild.roles, id=club.member_role_id)
         former = utils.get(member.guild.roles, id=club.former_member_role_id)
         await member.remove_roles(role, reason=f"{member.name} left club {club.name}")
-        await member.add_roles(former, reason=f"{member.name} left club {club.name}")
+        if _former == 1:
+            await member.add_roles(
+                former, reason=f"{member.name} left club {club.name}"
+            )
 
     async def handover(
         self, club: ClubSchema, new_pres: Member, new_treso: Member, guild: Guild

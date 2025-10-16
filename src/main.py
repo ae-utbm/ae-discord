@@ -15,6 +15,7 @@ from src.commands.admin import AdminCog
 from src.commands.club import ClubCog
 from src.commands.misc import MiscCog
 from src.commands.news import NewsCog
+from src.commands.role import RoleCog
 from src.settings import BASE_DIR, Settings
 
 if TYPE_CHECKING:
@@ -38,6 +39,7 @@ class AeBot(commands.Bot):
         await self.add_cog(NewsCog(self))
         await self.add_cog(AdminCog(self))
         await self.add_cog(MiscCog())
+        await self.add_cog(RoleCog(self))
 
     async def on_ready(self):
         await self.wait_until_ready()
