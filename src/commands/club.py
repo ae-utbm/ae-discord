@@ -126,8 +126,8 @@ class ClubCog(commands.GroupCog, group_name="club"):
             await interaction.followup.send(f"Le club : {club.name} existe déjà...")
         else:
             guild = interaction.guild
-            channel_club = utils.get(guild.channels, id=1428320894610309121)
-            mess = await channel_club.send(
+            id_channel_autorole = utils.get(guild.channels, name="club")
+            mess = await id_channel_autorole.send(
                 f"Réagi à ce message pour rejoindre le club {club.name}"
             )
 
