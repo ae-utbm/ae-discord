@@ -6,6 +6,7 @@ log_level = "INFO"
 id = <the id of the server here>
 news_channel_id = <the id of the news channel here>
 news_role_id = <the id of the news channel here>
+auto_role_channel_id = <the id of the auto role channel here>
 
 [sith_api]
 api_key = "<your sith api token here>"

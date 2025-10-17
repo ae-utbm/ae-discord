@@ -30,6 +30,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     def __init__(self, bot: AeBot):
         self.club_service = ClubService(bot)
         self.settings = Settings()
+        self.bot = bot
 
     async def autocomplete_club(
         self, _interaction: Interaction, current: str
@@ -126,13 +127,15 @@ class ClubCog(commands.GroupCog, group_name="club"):
             await interaction.followup.send(f"Le club : {club.name} existe déjà...")
         else:
             guild = interaction.guild
-            id_channel_autorole = utils.get(guild.channels, name="club")
+            id_channel_autorole = utils.get(
+                guild.channels, id=self.bot.settings.guild.auto_role_channel_id
+            )
             mess = await id_channel_autorole.send(
                 f"Réagi à ce message pour rejoindre le club {club.name}"
             )
 
             await mess.add_reaction("✅")
-            await self.club_service.create_club(club, interaction.guild, mess)
+            await self.club_service.create_club(club, guild, mess)
             await interaction.followup.send(f"Le club : {club.name} à été créé")
 
     @app_commands.command(name="passation")
