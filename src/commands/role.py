@@ -26,6 +26,10 @@ class RoleCog(commands.GroupCog, group_name="role"):
 
         guild = self.bot.get_guild(payload.guild_id)
         member = guild.get_member(payload.user_id)
+
+        if member == self.bot.user:
+            return
+
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
         emoji = str(payload.emoji)
