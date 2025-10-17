@@ -53,7 +53,6 @@ class RoleCog(commands.GroupCog, group_name="role"):
         db_club = Club.get_or_none(Club.message_autorole_id, message.id)
 
         if not db_club or emoji != "✅":
-            await member.send("nonon")
             return
 
         await self.club_service.remove_member(db_club, member, _former=0)
