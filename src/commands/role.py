@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from discord import RawReactionActionEvent
 from discord.ext import commands
 
 from src.client import ClubSchema  # noqa TC001
@@ -20,7 +22,7 @@ class RoleCog(commands.GroupCog, group_name="role"):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
         if payload.guild_id is None:
             return
 
@@ -44,7 +46,7 @@ class RoleCog(commands.GroupCog, group_name="role"):
         await self.club_service.add_member(db_club, member)
 
     @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
+    async def on_raw_reaction_remove(self, payload: RawReactionActionEvent):
         if payload.guild_id is None:
             return
 
