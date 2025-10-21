@@ -48,27 +48,31 @@ class ClubCog(commands.GroupCog, group_name="club"):
         clubs = clubs[:25]  # discord autocomplete can have at most 25 items
         return [Choice(name=club.name, value=str(club.id)) for club in clubs]
 
-    @app_commands.command(name="infos")
+    @app_commands.command(
+        name="infos",
+        description="Récupère les informations sur un club à partir du site AE.",
+    )
     @app_commands.autocomplete(club=autocomplete_club)
+    @app_commands.describe(club="Le club dont on veut avoir les infos")
     async def club_infos(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
-        """Permet d'envoie les informations d'un club"""
-        await interaction.response.defer(thinking=True)
-        await interaction.followup.send(embed=self.club_service.embed(club))
+        await interaction.response.send(embed=self.club_service.embed(club))
 
-    @app_commands.command(name="remove_member")
+    @app_commands.command(
+        name="remove_member",
+        description="Retire un membre du club et le marque comme ancien membre.",
+    )
     @app_commands.autocomplete(club=autocomplete_existing_club)
+    @app_commands.describe(
+        club="le club d'où retirer le membre", member="le membre à retirer"
+    )
     async def remove_club_member(
         self,
         interaction: Interaction,
         club: Transform[ClubSchema, ClubTransformer],
         member: Member,
     ):
-        """
-        Permet d'enlever, sur discord, un membre d'un club
-        et de l'ajouter en tant qu'ancien
-        """
         await interaction.response.defer(thinking=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         if not db_club:
@@ -91,15 +95,18 @@ class ClubCog(commands.GroupCog, group_name="club"):
             f"{member.name} a été retiré du club :thumbs_up:"
         )
 
-    @app_commands.command(name="add_member")
+    @app_commands.command(name="add_member", description="Ajoute un membre au club.")
     @app_commands.autocomplete(club=autocomplete_existing_club)
+    @app_commands.describe(
+        club="Le club dans lequel mettre l'utilisateur",
+        member="L'utilisateur à rajouter",
+    )
     async def add_club_member(
         self,
         interaction: Interaction,
         club: Transform[ClubSchema, ClubTransformer],
         member: Member,
     ):
-        """Permet d'ajouter un membre à un club existant sur le serveur discord"""
         await interaction.response.defer(thinking=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         role_membre = member.guild.get_role(db_club.member_role_id)
@@ -122,13 +129,16 @@ class ClubCog(commands.GroupCog, group_name="club"):
             f"{member.name} a été ajouté au club :thumbs_up:"
         )
 
-    @app_commands.command(name="create")
+    @app_commands.command(
+        name="create",
+        description="Crée un club, avec ses salons, ses rôles et ses permissions.",
+    )
     @app_commands.autocomplete(club=autocomplete_club)
     @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.describe(club="le club à créer")
     async def create_club(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
-        """Permet de créer un club déjà disponible sur le sith"""
         await interaction.response.defer(thinking=True)
         if Club.filter(Club.sith_id == club.id).exists():
             await interaction.followup.send(f"Le club : {club.name} existe déjà...")
@@ -138,16 +148,27 @@ class ClubCog(commands.GroupCog, group_name="club"):
                 guild.channels, id=self.bot.settings.guild.auto_role_channel_id
             )
             mess = await id_channel_autorole.send(
-                f"Réagi à ce message pour rejoindre le club {club.name}"
+                f"Réagis à ce message pour rejoindre le club {club.name}"
             )
 
             await mess.add_reaction("✅")
             await self.club_service.create_club(club, guild, mess)
             await interaction.followup.send(f"Le club : {club.name} à été créé")
 
-    @app_commands.command(name="passation")
+    @app_commands.command(
+        name="passation",
+        description=(
+            "Change le responsable et le trésorier du club. "
+            "Réactive le club s'il était inactif"
+        ),
+    )
     @app_commands.autocomplete(club=autocomplete_existing_club)
     @app_commands.checks.has_permissions(manage_roles=True)
+    @app_commands.describe(
+        club="le club pour lequel faire la passation",
+        new_president="le nouveau président du club",
+        new_treasurer="le nouveau trésorier du club",
+    )
     async def handover(
         self,
         interaction: Interaction,
@@ -155,7 +176,6 @@ class ClubCog(commands.GroupCog, group_name="club"):
         new_president: Member,
         new_treasurer: Member,
     ):
-        """Permet de faire la passation d'un club lors de la reprise"""
         await interaction.response.defer(thinking=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         guild = interaction.guild
@@ -184,20 +204,21 @@ class ClubCog(commands.GroupCog, group_name="club"):
             )
         await interaction.followup.send("Passation effectuée")
 
-    @app_commands.command(name="arret")
+    @app_commands.command(
+        name="arret", description="Désactive le club et retire tous ses membres."
+    )
     @app_commands.autocomplete(club=autocomplete_existing_club)
     @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.describe(club="le club à désactiver")
     async def stop_club(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
-        """Permet de mettre un club en inactif"""
         await interaction.response.defer(thinking=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         await self.club_service.stop_club(db_club, interaction.guild)
         annonce = await self.club_service.get_channel(
             interaction.guild, db_club.category_id, f"annonces {club.name}".lower()
         )
-
         if annonce:
             await annonce.send(
                 "Le club, n'ayant pas été repris, est "
