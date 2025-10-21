@@ -6,7 +6,7 @@ from datetime import datetime
 from logging import handlers
 from typing import TYPE_CHECKING
 
-from discord import Guild, Intents, Interaction
+from discord import Game, Guild, Intents, Interaction
 from discord.ext import commands
 from discord.utils import setup_logging
 
@@ -44,6 +44,7 @@ class AeBot(commands.Bot):
     async def on_ready(self):
         await self.wait_until_ready()
         self.watched_guild = self.get_guild(self.settings.guild.id)
+        await self.change_presence(activity=Game(name="/help"))
         self.logger.info(f"Bot ready to act on {self.watched_guild.name}")
 
     async def on_command(self, ctx: Context):

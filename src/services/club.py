@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
@@ -191,4 +192,5 @@ class ClubService:
                 role_member,
                 reason=f"Arrêt du club : {club.name}",
             )
+            await asyncio.sleep(1)
             await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
