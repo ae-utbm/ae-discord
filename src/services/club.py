@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
@@ -132,11 +131,13 @@ class ClubService:
             )
         await member.add_roles(role, reason=f"{member.name} joined club {club.name}")
 
-    async def remove_member(self, club: Club, member: Member, _former=1):
+    async def remove_member(
+        self, club: Club, member: Member, *, make_former: bool = True
+    ):
         role = utils.get(member.guild.roles, id=club.member_role_id)
         former = utils.get(member.guild.roles, id=club.former_member_role_id)
         await member.remove_roles(role, reason=f"{member.name} left club {club.name}")
-        if _former == 1:
+        if make_former:
             await member.add_roles(
                 former, reason=f"{member.name} left club {club.name}"
             )
@@ -192,5 +193,4 @@ class ClubService:
                 role_member,
                 reason=f"Arrêt du club : {club.name}",
             )
-            await asyncio.sleep(1)
             await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
