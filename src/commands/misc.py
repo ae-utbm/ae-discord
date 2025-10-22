@@ -10,6 +10,6 @@ if TYPE_CHECKING:
 
 
 class MiscCog(commands.Cog):
-    @app_commands.command(name="ping")
+    @app_commands.command(name="ping", description="Ping le bot")
     async def ping(self, interaction: Interaction[AeBot]):
         await interaction.response.send_message("pong")
