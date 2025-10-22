@@ -9,7 +9,7 @@ from src.db.models import Club
 from src.settings import Settings
 
 if TYPE_CHECKING:
-    from discord import Guild, Member
+    from discord import Guild, Member, Message
 
     from src.client import ClubSchema, SimpleClubSchema
     from src.main import AeBot
@@ -77,7 +77,7 @@ class ClubService:
             )
         return embed
 
-    async def create_club(self, club: ClubSchema, guild: Guild):
+    async def create_club(self, club: ClubSchema, guild: Guild, mess: Message):
         if Club.filter(Club.sith_id == club.id).exists():
             raise ClubExists
         # create the role for member, presidence and treasurer
@@ -119,6 +119,7 @@ class ClubService:
             treasurer_role_id=treasurer.id,
             member_role_id=member.id,
             former_member_role_id=former_member.id,
+            message_autorole_id=mess.id,
         )
 
     async def add_member(self, club: Club, member: Member):
@@ -130,11 +131,16 @@ class ClubService:
             )
         await member.add_roles(role, reason=f"{member.name} joined club {club.name}")
 
-    async def remove_member(self, club: Club, member: Member):
+    async def remove_member(
+        self, club: Club, member: Member, *, make_former: bool = True
+    ):
         role = utils.get(member.guild.roles, id=club.member_role_id)
         former = utils.get(member.guild.roles, id=club.former_member_role_id)
         await member.remove_roles(role, reason=f"{member.name} left club {club.name}")
-        await member.add_roles(former, reason=f"{member.name} left club {club.name}")
+        if make_former:
+            await member.add_roles(
+                former, reason=f"{member.name} left club {club.name}"
+            )
 
     async def handover(
         self, club: ClubSchema, new_pres: Member, new_treso: Member, guild: Guild

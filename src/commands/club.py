@@ -30,6 +30,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     def __init__(self, bot: AeBot):
         self.club_service = ClubService(bot)
         self.settings = Settings()
+        self.bot = bot
 
     async def autocomplete_club(
         self, _interaction: Interaction, current: str
@@ -52,6 +53,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     async def club_infos(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
+        """Permet d'envoie les informations d'un club"""
         await interaction.response.defer(thinking=True)
         await interaction.followup.send(embed=self.club_service.embed(club))
 
@@ -63,6 +65,10 @@ class ClubCog(commands.GroupCog, group_name="club"):
         club: Transform[ClubSchema, ClubTransformer],
         member: Member,
     ):
+        """
+        Permet d'enlever, sur discord, un membre d'un club
+        et de l'ajouter en tant qu'ancien
+        """
         await interaction.response.defer(thinking=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         if not db_club:
@@ -93,6 +99,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         club: Transform[ClubSchema, ClubTransformer],
         member: Member,
     ):
+        """Permet d'ajouter un membre à un club existant sur le serveur discord"""
         await interaction.response.defer(thinking=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         role_membre = member.guild.get_role(db_club.member_role_id)
@@ -121,11 +128,21 @@ class ClubCog(commands.GroupCog, group_name="club"):
     async def create_club(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
+        """Permet de créer un club déjà disponible sur le sith"""
         await interaction.response.defer(thinking=True)
         if Club.filter(Club.sith_id == club.id).exists():
             await interaction.followup.send(f"Le club : {club.name} existe déjà...")
         else:
-            await self.club_service.create_club(club, interaction.guild)
+            guild = interaction.guild
+            id_channel_autorole = utils.get(
+                guild.channels, id=self.bot.settings.guild.auto_role_channel_id
+            )
+            mess = await id_channel_autorole.send(
+                f"Réagi à ce message pour rejoindre le club {club.name}"
+            )
+
+            await mess.add_reaction("✅")
+            await self.club_service.create_club(club, guild, mess)
             await interaction.followup.send(f"Le club : {club.name} à été créé")
 
     @app_commands.command(name="passation")
@@ -138,6 +155,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         new_president: Member,
         new_treasurer: Member,
     ):
+        """Permet de faire la passation d'un club lors de la reprise"""
         await interaction.response.defer(thinking=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         guild = interaction.guild
@@ -172,6 +190,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     async def stop_club(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
+        """Permet de mettre un club en inactif"""
         await interaction.response.defer(thinking=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         await self.club_service.stop_club(db_club, interaction.guild)
