@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
-from discord import Embed, PermissionOverwrite, utils
+from discord import CategoryChannel, Embed, PermissionOverwrite, utils
 
 from src.db.models import Club
 from src.settings import Settings
@@ -106,6 +106,7 @@ class ClubService:
         }
 
         category = await guild.create_category(club.name, overwrites=overwrites)
+        await self.move_to_bottom(category)
         await category.create_text_channel(
             f"Annonces-{club.name}", overwrites=news_overwrite, news=True, position=0
         )
@@ -147,7 +148,7 @@ class ClubService:
     ):
         club = Club.get_or_none(Club.sith_id == club.id)
 
-        # removing former presidence and treasurer
+        # removing former president and treasurer
         role_pres = utils.get(guild.roles, id=club.president_role_id)
         role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
         former = utils.get(guild.roles, id=club.former_member_role_id)
@@ -158,7 +159,7 @@ class ClubService:
             )
             await member.add_roles(former, reason=f"Passation du club : {club.name}")
 
-        # add new presidence and treasurer
+        # add new president and treasurer
         for new_member in [new_pres, new_treso]:
             if former in new_member.roles:
                 await new_member.remove_roles(
@@ -169,12 +170,7 @@ class ClubService:
         category = utils.get(guild.categories, id=club.category_id)
         if category.name.endswith("[inactif]"):
             await category.edit(name=club.name)
-        highest_inactive = utils.find(
-            lambda c: c.name.endswith("[inactif]"),
-            sorted(guild.categories, key=lambda c: c.position),
-        )
-        if highest_inactive:
-            await category.move(before=highest_inactive)
+            await self.move_to_bottom(category)
 
     async def stop_club(self, club: Club, guild: Guild):
         role_pres = utils.get(guild.roles, id=club.president_role_id)
@@ -182,9 +178,10 @@ class ClubService:
         role_member = utils.get(guild.roles, id=club.member_role_id)
         role_former = utils.get(guild.roles, id=club.former_member_role_id)
         old_member = {*role_pres.members, *role_treso.members, *role_member.members}
-        total_channels = len(guild.channels)
         category = utils.get(guild.categories, id=club.category_id)
-        await category.edit(position=total_channels - 1, name=club.name + " [inactif]")
+        await self.move_to_bottom(category)
+        await category.edit(name=club.name + " [inactif]")
+        await self.move_to_bottom(category)
 
         for e in old_member:
             await e.remove_roles(
@@ -194,3 +191,17 @@ class ClubService:
                 reason=f"Arrêt du club : {club.name}",
             )
             await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
+
+    @staticmethod
+    async def move_to_bottom(category: CategoryChannel):
+        """Move this category after the last category belong to an active club."""
+        guild = category.guild
+        inactives = [c for c in guild.categories if c.name.endswith("[inactif]")]
+        if not inactives:
+            await category.move(end=True)
+            return
+        other = min(inactives, key=lambda c: c.position)
+        if (category.position - other.position) <= 1:
+            # the category is already at the bottom of the list, there is nothing to do
+            return
+        await category.move(before=other)
