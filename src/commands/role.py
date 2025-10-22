@@ -23,29 +23,29 @@ class RoleCog(commands.GroupCog, group_name="role"):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
-        if payload.guild_id is None or payload.member == self.bot.user:
+        member = self.bot.watched_guild.get_member(payload.user_id)
+        if payload.guild_id is None or member == self.bot.user:
             return
 
-        db_club = Club.get(Club.message_autorole_id == payload.message.id)
+        db_club = Club.get_or_none(Club.message_autorole_id == payload.message_id)
         if not db_club:
             return
 
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
         if str(payload.emoji) != "✅":
-            await message.remove_reaction(payload.emoji, payload.member)
+            await message.remove_reaction(payload.emoji, member)
 
-        await self.club_service.add_member(db_club, payload.member)
+        await self.club_service.add_member(db_club, member)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: RawReactionActionEvent):
-        if payload.guild_id is None or payload.member == self.bot.user:
+        member = self.bot.watched_guild.get_member(payload.user_id)
+        if payload.guild_id is None or member == self.bot.user:
             return
 
-        db_club = Club.get(Club.message_autorole_id == payload.message.id)
+        db_club = Club.get_or_none(Club.message_autorole_id == payload.message_id)
         if not db_club or str(payload.emoji) != "✅":
             return
 
-        await self.club_service.remove_member(
-            db_club, payload.member, make_former=False
-        )
+        await self.club_service.remove_member(db_club, member, make_former=False)
