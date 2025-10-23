@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
@@ -35,6 +36,7 @@ class ClubService:
         self._client = bot.client
         self._club_cache = {}
         self._bot = bot
+        self._background_tasks = set()
 
     async def search_club(
         self, current: str, *, only_existing: bool
@@ -135,13 +137,54 @@ class ClubService:
     async def remove_member(
         self, club: Club, member: Member, *, make_former: bool = True
     ):
-        role = utils.get(member.guild.roles, id=club.member_role_id)
-        former = utils.get(member.guild.roles, id=club.former_member_role_id)
-        await member.remove_roles(role, reason=f"{member.name} left club {club.name}")
-        if make_former:
-            await member.add_roles(
-                former, reason=f"{member.name} left club {club.name}"
+        """Remove a member from the club.
+
+        Args:
+            club: The club to remove the user from
+            member: The member to remove
+            make_former:
+                if True, the member will receive
+                a role indicating its former club membership
+        """
+        await self.remove_members(club, [member], make_former=make_former)
+
+    async def remove_members(
+        self,
+        club: Club,
+        members: list[Member] | tuple[Member] | set[Member],
+        *,
+        make_former: bool = True,
+    ):
+        """Remove multiple members from a club.
+
+        Args:
+            club: The club to remove the user from
+            members: The members to remove
+            make_former:
+                if True, the member will receive
+                a role indicating its former club membership
+
+        Warnings:
+            This method sleeps for two seconds between each member
+            (in order to avoid rate-limit), so it may be a bad idea
+            to await it.
+            Favour an execution inside a detached async Task.
+        """
+        role_ids = [club.member_role_id, club.president_role_id, club.treasurer_role_id]
+        roles = [self._bot.watched_guild.get_role(r) for r in role_ids]
+        former = self._bot.watched_guild.get_role(club.former_member_role_id)
+        for member in members:
+            if len(members) > 1:
+                # if there is more than one member,
+                # sleep a little bit to avoid rate limit
+                await asyncio.sleep(2)
+            await member.remove_roles(
+                *roles, reason=f"{member.name} left club {club.name}"
             )
+            if make_former:
+                await member.add_roles(
+                    former, reason=f"{member.name} left club {club.name}"
+                )
 
     async def handover(
         self, club: ClubSchema, new_pres: Member, new_treso: Member, guild: Guild
@@ -176,25 +219,25 @@ class ClubService:
         role_pres = utils.get(guild.roles, id=club.president_role_id)
         role_treso = utils.get(guild.roles, id=club.treasurer_role_id)
         role_member = utils.get(guild.roles, id=club.member_role_id)
-        role_former = utils.get(guild.roles, id=club.former_member_role_id)
-        old_member = {*role_pres.members, *role_treso.members, *role_member.members}
+        old_members = {*role_pres.members, *role_treso.members, *role_member.members}
         category = utils.get(guild.categories, id=club.category_id)
         await self.move_to_bottom(category)
         await category.edit(name=club.name + " [inactif]")
-        await self.move_to_bottom(category)
-
-        for e in old_member:
-            await e.remove_roles(
-                role_pres,
-                role_treso,
-                role_member,
-                reason=f"Arrêt du club : {club.name}",
-            )
-            await e.add_roles(role_former, reason=f"Arrêt du club : {club.name}")
+        # see https://docs.python.org/3/library/asyncio-task.html#creating-tasks
+        task = asyncio.create_task(
+            self.remove_members(club, old_members, make_former=True)
+        )
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
 
     @staticmethod
     async def move_to_bottom(category: CategoryChannel):
-        """Move this category after the last category belong to an active club."""
+        """Move this category after the last category belong to an active club.
+
+        Warnings:
+            This method seems to have a high cost on discord's side.
+            Using it a little bit too much is likely to end in rate-limit.
+        """
         guild = category.guild
         inactives = [c for c in guild.categories if c.name.endswith("[inactif]")]
         if not inactives:
