@@ -73,12 +73,11 @@ class ClubCog(commands.GroupCog, group_name="club"):
         club: Transform[ClubSchema, ClubTransformer],
         member: Member,
     ):
-        await interaction.response.defer(thinking=True)
-        db_club = Club.get_or_none(Club.sith_id == club.id)
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        db_club: Club = Club.get_or_none(Club.sith_id == club.id)
         if not db_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
-        role_membre = utils.get(member.guild.roles, id=db_club.member_role_id)
         if (
             not interaction.user.guild_permissions.manage_roles
             and not interaction.user.get_role(db_club.president_role_id)
@@ -87,9 +86,19 @@ class ClubCog(commands.GroupCog, group_name="club"):
                 "Seul le président du club et les admins peuvent retirer un membre"
             )
             return
-        if role_membre not in member.roles:
+        member_role = interaction.guild.get_role(db_club.member_role_id)
+        board_roles = [db_club.president_role_id, db_club.treasurer_role_id]
+        if member_role not in member.roles:
             await interaction.followup.send("Cet utilisateur n'est pas dans le club")
             return
+        if any(member.get_role(r) for r in board_roles):
+            await interaction.followup.send(
+                "Cette commande ne peut pas être utilisée pour retirer "
+                "le président ou le trésorier dun club.\n\n"
+                "Utilisez plutôt `/club passation` ou `/club arret`."
+            )
+            return
+
         await self.club_service.remove_member(db_club, member)
         await interaction.followup.send(
             f"{member.name} a été retiré du club :thumbs_up:"
@@ -107,9 +116,9 @@ class ClubCog(commands.GroupCog, group_name="club"):
         club: Transform[ClubSchema, ClubTransformer],
         member: Member,
     ):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
-        role_membre = member.guild.get_role(db_club.member_role_id)
+        role_membre = interaction.guild.get_role(db_club.member_role_id)
         if not db_club:
             await interaction.followup.send(f"Le club : {club.name} n'existe pas")
             return
@@ -139,7 +148,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     async def create_club(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         if Club.filter(Club.sith_id == club.id).exists():
             await interaction.followup.send(f"Le club : {club.name} existe déjà...")
         else:
@@ -176,7 +185,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
         new_president: Member,
         new_treasurer: Member,
     ):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         guild = interaction.guild
 
@@ -213,7 +222,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     async def stop_club(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         db_club = Club.get_or_none(Club.sith_id == club.id)
         await self.club_service.stop_club(db_club, interaction.guild)
         annonce = await self.club_service.get_channel(
