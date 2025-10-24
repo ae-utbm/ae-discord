@@ -114,6 +114,7 @@ class ClubService:
         )
         await category.create_text_channel(f"Général-{club.name}")
         await category.create_voice_channel(f"Général-{club.name}")
+        await self.move_to_bottom(category)
         Club.create(
             name=club.name,
             category_id=category.id,
