@@ -57,7 +57,7 @@ class ClubCog(commands.GroupCog, group_name="club"):
     async def club_infos(
         self, interaction: Interaction, club: Transform[ClubSchema, ClubTransformer]
     ):
-        await interaction.response.send(embed=self.club_service.embed(club))
+        await interaction.response.send_message(embed=self.club_service.embed(club))
 
     @app_commands.command(
         name="remove_member",

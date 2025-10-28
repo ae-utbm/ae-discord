@@ -244,7 +244,7 @@ class ClubService:
             await category.move(end=True)
             return
         other = min(inactives, key=lambda c: c.position)
-        if (category.position - other.position) <= 1:
+        if 0 <= (other.position - category.position) <= 1:
             # the category is already at the bottom of the list, there is nothing to do
             return
         await category.move(before=other)
