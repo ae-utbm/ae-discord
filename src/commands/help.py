@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from src.main import AeBot
 
 
-class HelpCog(commands.GroupCog, group_name="help"):
+class HelpCog(commands.Cog):
     def __init__(self, bot: AeBot):
         self.bot = bot
 
@@ -23,19 +23,43 @@ class HelpCog(commands.GroupCog, group_name="help"):
     async def help(self, interaction: Interaction):
         embed = Embed(title="Aide du bot", color=Color.blue())
 
+        pres_commande = ["remove_member", "add_member"]
+        admin_commande = ["passation", "arret", "create"]
+
+        roles = interaction.user.roles
+        n = len(roles)
+        i = 0
+        loop = True
+        grade = 2  # 0 for admin 1 for presidence of clubs and 2 for member
+        while i < n and loop:
+            if roles[i].name == "Présidence AE":
+                grade = 0
+                loop = False
+            elif roles[i].name.startswith("Responsable"):
+                grade = 1
+                loop = False
+            else:
+                pass
+            i += 1
+
         for command in self.bot.tree.get_commands():
             if isinstance(command, app_commands.Group) and command.commands:
-                subcommands = "\n".join(
-                    f"  /{command.name} {sub.name} - {sub.description}"
-                    for sub in command.commands
-                )
-                embed.add_field(
-                    name=f"/{command.name} (groupe)", value=subcommands, inline=False
-                )
-            else:
+                for sub in command.commands:
+                    if not (
+                        (sub.name in pres_commande and grade > 1)
+                        or (sub.name in admin_commande and grade != 0)
+                    ):
+                        subcommands = f"  {sub.description}\n"
+                        embed.add_field(
+                            name=f"/{command.name} {sub.name}",
+                            value=subcommands,
+                            inline=False,
+                        )
+
+            elif command.name != "role":
                 embed.add_field(
                     name=f"/{command.name}",
-                    value=command.description or "Pas de description.",
+                    value=command.description or "",
                     inline=False,
                 )
 
