@@ -13,6 +13,7 @@ from discord.utils import setup_logging
 from src.client import SithClient
 from src.commands.admin import AdminCog
 from src.commands.club import ClubCog
+from src.commands.help import HelpCog
 from src.commands.misc import MiscCog
 from src.commands.news import NewsCog
 from src.commands.role import RoleCog
@@ -40,11 +41,12 @@ class AeBot(commands.Bot):
         await self.add_cog(AdminCog(self))
         await self.add_cog(MiscCog())
         await self.add_cog(RoleCog(self))
+        await self.add_cog(HelpCog(self))
 
     async def on_ready(self):
         await self.wait_until_ready()
         self.watched_guild = self.get_guild(self.settings.guild.id)
-        await self.change_presence(activity=Game(name="/help"))
+        await self.change_presence(activity=Game(name="/help help"))
         self.logger.info(f"Bot ready to act on {self.watched_guild.name}")
 
     async def on_command(self, ctx: Context):
