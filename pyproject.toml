@@ -5,18 +5,18 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "aiohttp>=3.13.0",
+    "aiohttp>=3.13.2",
     "discord-py[speed]>=2.6.4",
-    "peewee>=3.18.2",
-    "pydantic-settings>=2.11.0",
-    "pydantic>=2.12.0",
+    "peewee>=3.18.3",
+    "pydantic-settings>=2.12.0",
+    "pydantic>=2.12.5",
     "pytz>=2025.2",
 ]
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.3.0",
-    "ruff>=0.14.0",
+    "pre-commit>=4.5.0",
+    "ruff>=0.14.9",
 ]
 
 [tool.ruff.lint]
