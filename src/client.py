@@ -9,7 +9,7 @@ from aiohttp import (
     TraceRequestEndParams,
     TraceRequestStartParams,
 )
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from src.settings import Settings
 
@@ -52,6 +52,17 @@ class ClubProfileSchema(SimpleClubSchema):
 class ClubSearchResultSchema(BaseModel):
     count: int
     results: list[SimpleClubSchema]
+
+
+class UserMembershipSchema(BaseModel):
+    id: int
+    start_date: date
+    role: int
+    description: str
+    club: SimpleClubSchema
+
+
+UserMembershipList = TypeAdapter(list[UserMembershipSchema])
 
 
 class NewsSchema(BaseModel):
@@ -106,6 +117,14 @@ class SithClient(ClientSession):
             content = await res.read()
         try:
             return ClubSearchResultSchema.model_validate_json(content).results
+        except ValidationError as e:
+            self.logger.error(str(e))
+
+    async def get_user_clubs(self, user_id: int) -> list[UserMembershipSchema] | None:
+        async with self.get(f"/api/user/{user_id}/club") as res:
+            content = await res.read()
+        try:
+            return UserMembershipList.validate_json(content)
         except ValidationError as e:
             self.logger.error(str(e))
 
