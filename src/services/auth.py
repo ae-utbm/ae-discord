@@ -13,10 +13,8 @@ class AuthService:
         self.bot = bot
         self.client = client
 
-    async def get_member_roles(
-        self, member: Member, sith_user: UserSchema
-    ) -> set[Role]:
-        memberships = await self.client.get_user_clubs(sith_user.id)
+    async def get_member_roles(self, member: Member, sith_id: int) -> set[Role]:
+        memberships = await self.client.get_user_clubs(sith_id)
         if not memberships:
             return set()
         club_ids = {m.club.id for m in memberships}
@@ -50,7 +48,15 @@ class AuthService:
             discord_id=user_id,
             defaults={"sith_id": data.id, "username": member.name},
         )
-        await member.edit(roles=await self.get_member_roles(member, data))
+        await member.edit(roles=await self.get_member_roles(member, data.id))
         await member.send(
             "Vos rôles sur le serveur ont été synchronisés avec le site AE."
         )
+
+    async def sync_all_users(self):
+        users = User.select()
+        for user in users:
+            member = self.bot.watched_guild.get_member(user.discord_id)
+            if not member:
+                continue
+            await member.edit(roles=await self.get_member_roles(member, user.sith_id))

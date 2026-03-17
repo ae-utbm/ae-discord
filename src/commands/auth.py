@@ -10,13 +10,15 @@ from src.ui.auth import AuthInteractionButton
 
 if TYPE_CHECKING:
     from src.main import AeBot
+    from src.services.auth import AuthService
 
 
 @app_commands.guild_only
 @app_commands.default_permissions(administrator=True)
 class AuthCog(GroupCog, name="auth"):
-    def __init__(self, bot: AeBot):
+    def __init__(self, bot: AeBot, auth_service: AuthService):
         self.bot = bot
+        self.auth_service = auth_service
 
     @app_commands.command(
         name="message",
@@ -31,3 +33,14 @@ class AuthCog(GroupCog, name="auth"):
         view.add_item(AuthInteractionButton(channel.id))
         await channel.send(view=view)
         await interaction.response.send_message("Message envoyé", ephemeral=True)
+
+    @app_commands.command(
+        name="sync",
+        description=(
+            "Synchronise tous les utilisateurs enregistrés avec les données du site AE."
+        ),
+    )
+    async def synchronize_users(self, interaction: Interaction[AeBot]):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        await self.auth_service.sync_all_users()
+        await interaction.followup.send("Utilisateurs synchronisés")
