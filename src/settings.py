@@ -15,6 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 class ApiConfig(BaseModel):
     url: HttpUrl = "http://127.0.0.1:8000/"
     api_key: SecretStr
+    hmac_key: SecretStr
 
 
 class GuildConfig(BaseModel):

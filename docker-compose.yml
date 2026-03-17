@@ -1,6 +1,7 @@
 services:
   discord:
     build: .
+    command: [ "uv", "run", "-m", "src.main" ]
     volumes:
       - ./db.sqlite3:/app/db.sqlite3
       - ./log:/app/log

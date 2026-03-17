@@ -12,6 +12,7 @@ from discord.utils import setup_logging
 
 from src.client import SithClient
 from src.commands.admin import AdminCog
+from src.commands.auth import AuthCog, AuthInteractionButton
 from src.commands.club import ClubCog
 from src.commands.help import HelpCog
 from src.commands.misc import MiscCog
@@ -39,9 +40,12 @@ class AeBot(commands.Bot):
         await self.add_cog(ClubCog(self))
         await self.add_cog(NewsCog(self))
         await self.add_cog(AdminCog(self))
+        await self.add_cog(AuthCog(self))
         await self.add_cog(MiscCog())
         await self.add_cog(RoleCog(self))
         await self.add_cog(HelpCog(self))
+        # cf. https://github.com/Rapptz/discord.py/blob/master/examples/views/persistent.py
+        self.add_dynamic_items(AuthInteractionButton)
 
     async def on_ready(self):
         await self.wait_until_ready()
@@ -90,7 +94,9 @@ async def main():
             style="{",
         )
         setup_logging(handler=handler, formatter=formatter)
+        from src.web import start_server
 
+        await start_server(bot, client)
         await bot.start(bot.settings.bot.token.get_secret_value())
 
 

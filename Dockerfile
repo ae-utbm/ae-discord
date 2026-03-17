@@ -13,5 +13,3 @@ WORKDIR /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --compile-bytecode
-
-ENTRYPOINT ["uv", "run", "-m", "src.main"]
